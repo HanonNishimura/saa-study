@@ -1,0 +1,958 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#f47b27">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="SAA勉強">
+<title>AWS SAA-C03 合格への道</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/svg+xml" href="icon.svg">
+<link rel="apple-touch-icon" href="icon.svg">
+<style>
+:root {
+  --bg: #0f1620;
+  --surface: #1a2332;
+  --surface2: #243044;
+  --border: #2e3a52;
+  --text: #e8edf5;
+  --muted: #8b96a8;
+  --accent: #f47b27;
+  --accent-soft: #f47b2722;
+  --ok: #4caf50;
+  --warn: #ffb74d;
+  --bad: #ef5350;
+  --night1: #3a4a6b;
+  --night2pre: #5b3a6b;
+  --nightafter: #6b4a2a;
+  --offday: #2a3f5f;
+  --exam: #b33a1a;
+}
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body {
+  margin: 0; padding: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Sans", "Yu Gothic", system-ui, sans-serif;
+  font-size: 15px;
+  line-height: 1.5;
+  -webkit-text-size-adjust: 100%;
+  overscroll-behavior-y: contain;
+}
+body { padding-bottom: 80px; }
+
+/* ===== Header ===== */
+header {
+  position: sticky; top: 0; z-index: 100;
+  background: linear-gradient(135deg, #1a2332 0%, #243044 100%);
+  border-bottom: 2px solid var(--accent);
+  padding: 12px 14px 10px;
+  padding-top: calc(12px + env(safe-area-inset-top));
+}
+.title { font-size: 16px; font-weight: 700; color: var(--accent); letter-spacing: 0.02em; }
+.subtitle { font-size: 12px; color: var(--muted); margin-top: 2px; }
+.stats-row {
+  display: grid; grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px; margin-top: 10px;
+}
+.stat {
+  background: rgba(0,0,0,0.25);
+  border-radius: 8px; padding: 6px 8px;
+  text-align: center;
+}
+.stat-label { font-size: 10px; color: var(--muted); }
+.stat-value { font-size: 17px; font-weight: 700; color: var(--accent); margin-top: 1px; }
+.stat-sub { font-size: 10px; color: var(--muted); }
+
+.progress-bar {
+  margin-top: 10px;
+  height: 8px; background: rgba(0,0,0,0.35); border-radius: 6px; overflow: hidden;
+}
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent), #ffa566);
+  transition: width 0.4s ease;
+}
+.progress-text {
+  font-size: 11px; color: var(--muted); margin-top: 4px; text-align: right;
+}
+
+/* ===== Tabs ===== */
+.tabs {
+  display: flex; gap: 0; margin-top: 10px;
+  background: rgba(0,0,0,0.3); border-radius: 8px; padding: 3px;
+}
+.tab {
+  flex: 1; padding: 8px 4px; text-align: center;
+  font-size: 12px; font-weight: 600; color: var(--muted);
+  background: transparent; border: none; border-radius: 6px;
+  cursor: pointer; transition: all 0.2s;
+}
+.tab.active { background: var(--accent); color: #fff; }
+
+/* ===== Today button ===== */
+.today-btn {
+  position: fixed; right: 14px; bottom: 14px; z-index: 50;
+  background: var(--accent); color: #fff;
+  border: none; border-radius: 50%;
+  width: 52px; height: 52px;
+  font-size: 11px; font-weight: 700;
+  box-shadow: 0 4px 12px rgba(244, 123, 39, 0.4);
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+}
+.today-btn:active { transform: scale(0.95); }
+
+/* ===== View container ===== */
+main { padding: 12px 12px 20px; }
+.view { display: none; }
+.view.active { display: block; }
+
+/* ===== Day card ===== */
+.day-card {
+  background: var(--surface);
+  border-radius: 12px;
+  margin-bottom: 12px;
+  overflow: hidden;
+  border-left: 4px solid var(--border);
+  transition: border-color 0.2s;
+}
+.day-card.today { border-left-color: var(--accent); box-shadow: 0 0 0 1px var(--accent-soft); }
+.day-card.done { opacity: 0.6; }
+.day-card.shift-night1 { border-left-color: var(--night1); }
+.day-card.shift-night2pre { border-left-color: var(--night2pre); background: linear-gradient(135deg, var(--surface) 0%, #2a1f3a 100%); }
+.day-card.shift-nightafter { border-left-color: var(--nightafter); }
+.day-card.shift-off { border-left-color: var(--offday); }
+.day-card.shift-exam { border-left-color: var(--exam); background: linear-gradient(135deg, #3a1a14 0%, var(--surface) 100%); }
+
+.day-head {
+  padding: 10px 12px;
+  display: flex; align-items: center; justify-content: space-between;
+  cursor: pointer; user-select: none;
+}
+.day-head-l { display: flex; align-items: center; gap: 10px; }
+.day-date {
+  font-size: 18px; font-weight: 700;
+  min-width: 56px;
+}
+.day-dow {
+  font-size: 11px; color: var(--muted);
+  background: rgba(0,0,0,0.3); padding: 2px 6px; border-radius: 4px;
+}
+.day-dow.sun { color: #ff8a80; }
+.day-dow.sat { color: #82b1ff; }
+.day-shift {
+  font-size: 11px; font-weight: 600;
+  padding: 3px 8px; border-radius: 4px;
+  background: var(--surface2);
+}
+.day-shift.night1 { background: var(--night1); color: #fff; }
+.day-shift.night2pre { background: var(--night2pre); color: #fff; }
+.day-shift.nightafter { background: var(--nightafter); color: #fff; }
+.day-shift.off { background: var(--offday); color: #fff; }
+.day-shift.exam { background: var(--exam); color: #fff; }
+
+.day-time {
+  font-size: 13px; font-weight: 700; color: var(--accent);
+}
+.day-time .target { color: var(--muted); font-weight: 500; }
+.toggle-arrow {
+  color: var(--muted); font-size: 12px; transition: transform 0.2s;
+  margin-left: 6px;
+}
+.day-card.open .toggle-arrow { transform: rotate(90deg); }
+
+.day-body {
+  display: none;
+  padding: 0 12px 12px;
+  border-top: 1px solid var(--border);
+}
+.day-card.open .day-body { display: block; }
+
+.day-section {
+  margin-top: 10px;
+}
+.section-title {
+  font-size: 11px; color: var(--muted); font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.05em;
+  margin-bottom: 6px;
+}
+
+/* ===== Task / checkbox ===== */
+.task {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 9px 8px; margin-bottom: 4px;
+  background: rgba(0,0,0,0.2);
+  border-radius: 8px;
+  cursor: pointer; user-select: none;
+  min-height: 44px;
+}
+.task input[type="checkbox"] {
+  width: 22px; height: 22px;
+  margin: 0; flex-shrink: 0;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+.task-label {
+  flex: 1; font-size: 13.5px; line-height: 1.45;
+}
+.task.done .task-label {
+  text-decoration: line-through;
+  color: var(--muted);
+}
+
+/* ===== Time input ===== */
+.time-row {
+  display: flex; align-items: center; gap: 8px;
+  margin-top: 8px;
+}
+.time-row label { font-size: 12px; color: var(--muted); flex-shrink: 0; }
+.time-input {
+  width: 64px;
+  background: rgba(0,0,0,0.3);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 6px 8px;
+  font-size: 14px;
+  text-align: center;
+  font-family: inherit;
+}
+.time-input:focus { outline: none; border-color: var(--accent); }
+.time-target { font-size: 12px; color: var(--muted); }
+
+/* ===== Note ===== */
+.note-input {
+  width: 100%;
+  background: rgba(0,0,0,0.25);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px;
+  font-size: 13px;
+  font-family: inherit;
+  resize: vertical;
+  min-height: 50px;
+}
+.note-input:focus { outline: none; border-color: var(--accent); }
+
+.memo-hint { font-size: 11px; color: var(--muted); margin-top: 6px; font-style: italic; }
+
+/* ===== Stats view ===== */
+.stat-card {
+  background: var(--surface);
+  border-radius: 12px;
+  padding: 14px;
+  margin-bottom: 12px;
+}
+.stat-card h3 {
+  margin: 0 0 10px;
+  font-size: 14px; color: var(--accent);
+}
+.big-num {
+  font-size: 32px; font-weight: 700; color: var(--accent);
+}
+.big-num .unit { font-size: 14px; color: var(--muted); font-weight: 400; }
+.kv-row {
+  display: flex; justify-content: space-between;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+}
+.kv-row:last-child { border-bottom: none; }
+.kv-row .v { color: var(--accent); font-weight: 600; }
+
+/* ===== Exam view ===== */
+.exam-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 10px; align-items: center;
+  padding: 10px;
+  background: rgba(0,0,0,0.2);
+  border-radius: 8px;
+  margin-bottom: 8px;
+}
+.exam-name { font-size: 13px; }
+.exam-target { font-size: 11px; color: var(--muted); display: block; }
+.exam-score-input {
+  width: 70px;
+  background: rgba(0,0,0,0.4);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 6px;
+  font-size: 14px; text-align: center;
+  font-family: inherit;
+}
+.score-badge {
+  font-size: 11px; padding: 3px 7px; border-radius: 4px;
+  min-width: 38px; text-align: center;
+}
+.score-badge.pass { background: var(--ok); color: #fff; }
+.score-badge.near { background: var(--warn); color: #000; }
+.score-badge.fail { background: var(--bad); color: #fff; }
+.score-badge.empty { background: var(--border); color: var(--muted); }
+
+/* ===== Settings ===== */
+.settings-section { margin-top: 16px; }
+.btn {
+  display: inline-block;
+  padding: 10px 16px;
+  background: var(--surface2);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 13px; font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  margin-right: 6px; margin-bottom: 6px;
+}
+.btn:active { background: var(--border); }
+.btn.danger { color: var(--bad); border-color: var(--bad); }
+.btn.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+.priority-table {
+  width: 100%; font-size: 12px;
+  border-collapse: collapse;
+}
+.priority-table th, .priority-table td {
+  padding: 6px 4px;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+}
+.priority-table th { color: var(--muted); font-weight: 600; }
+.prio-top { color: var(--bad); font-weight: 700; }
+.prio-mid { color: var(--warn); }
+.prio-low { color: var(--muted); }
+.prio-done { color: var(--ok); }
+
+/* ===== Toast ===== */
+.toast {
+  position: fixed; bottom: 86px; left: 50%; transform: translateX(-50%);
+  background: var(--accent); color: #fff;
+  padding: 8px 16px; border-radius: 20px;
+  font-size: 13px; font-weight: 600;
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.3s, transform 0.3s;
+  z-index: 200;
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(-6px); }
+
+.empty-msg { text-align: center; color: var(--muted); padding: 40px 20px; font-size: 13px; }
+.hint { font-size: 11px; color: var(--muted); margin: 6px 2px 10px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="title">AWS SAA-C03 合格への道</div>
+  <div class="subtitle">5/20 → 6/10 試験日</div>
+  <div class="stats-row">
+    <div class="stat">
+      <div class="stat-label">試験まで</div>
+      <div class="stat-value" id="days-left">-</div>
+      <div class="stat-sub">日</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">勉強時間</div>
+      <div class="stat-value" id="total-hours">-</div>
+      <div class="stat-sub">/ 70h</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">完了タスク</div>
+      <div class="stat-value" id="task-done">-</div>
+      <div class="stat-sub" id="task-total"></div>
+    </div>
+  </div>
+  <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+  <div class="progress-text" id="progress-text">進捗 0%</div>
+  <div class="tabs">
+    <button class="tab active" data-view="schedule">スケジュール</button>
+    <button class="tab" data-view="stats">統計</button>
+    <button class="tab" data-view="exam">模擬試験</button>
+    <button class="tab" data-view="settings">設定</button>
+  </div>
+</header>
+
+<main>
+  <div class="view active" id="view-schedule"></div>
+  <div class="view" id="view-stats"></div>
+  <div class="view" id="view-exam"></div>
+  <div class="view" id="view-settings"></div>
+</main>
+
+<button class="today-btn" id="today-btn" title="今日へ">今日</button>
+<div class="toast" id="toast"></div>
+
+<script>
+// ===== Schedule data =====
+const SCHEDULE = [
+  { date:"5/20", dow:"水", shift:"夜勤1日目", shiftClass:"night1", workTime:"21:00〜33:30", targetHours:4,
+    tasks:[
+      {id:"t520_1", label:"第1章① Well-Architected/ネットワーク基礎"},
+      {id:"t520_2", label:"Ping-t: EC2 (23問)"},
+      {id:"t520_3", label:"夜勤隙間: Black Belt：VPC"}
+    ], memo:"夜勤前に集中・夜勤明けは休む" },
+  { date:"5/21", dow:"木", shift:"夜勤2日目前", shiftClass:"night2pre", workTime:"21:00〜33:30", targetHours:0,
+    tasks:[{id:"t521_1", label:"勉強NG・睡眠優先（しっかり休む）"}], memo:"" },
+  { date:"5/22", dow:"金", shift:"夜勤明け", shiftClass:"nightafter", workTime:"〜16時帰宅", targetHours:2,
+    tasks:[
+      {id:"t522_1", label:"第1章② アクセス制御/コンピューティング（さらっと）"},
+      {id:"t522_2", label:"Ping-t: IAM (19問)"}
+    ], memo:"16時帰宅→16〜18時のみ" },
+  { date:"5/23", dow:"土", shift:"休み", shiftClass:"off", workTime:"終日勉強可", targetHours:7,
+    tasks:[
+      {id:"t523_1", label:"第1章③ ストレージ/DB"},
+      {id:"t523_2", label:"第1章④ データ処理/構成管理"},
+      {id:"t523_3", label:"Ping-t: S3 (38問)"},
+      {id:"t523_4", label:"Ping-t: VPC (44問)"},
+      {id:"t523_5", label:"Ping-t: ELB/Auto Scaling (33問)"}
+    ], memo:"午前3h+午後4h" },
+  { date:"5/24", dow:"日", shift:"C勤", shiftClass:"", workTime:"09:00〜21:30", targetHours:1,
+    tasks:[
+      {id:"t524_1", label:"通勤Ping-t: RDS/Aurora (10問)"}
+    ], memo:"持込不可・通勤Ping-t活用" },
+  { date:"5/25", dow:"月", shift:"B勤", shiftClass:"", workTime:"12:30〜21:30", targetHours:3,
+    tasks:[
+      {id:"t525_1", label:"第2章① セキュリティ設計/IAM"},
+      {id:"t525_2", label:"Ping-t: KMS/CloudHSM (8問)"},
+      {id:"t525_3", label:"Ping-t: WAF/Shield (6問)"}
+    ], memo:"午前中に集中" },
+  { date:"5/26", dow:"火", shift:"休み", shiftClass:"off", workTime:"終日勉強可", targetHours:7,
+    tasks:[
+      {id:"t526_1", label:"第2章② NWセキュリティ/データ保護/監視"},
+      {id:"t526_2", label:"Ping-t: Route53 (17問)"},
+      {id:"t526_3", label:"Ping-t: CloudFront (13問)"},
+      {id:"t526_4", label:"Ping-t: Direct Connect (10問)"}
+    ], memo:"終日" },
+  { date:"5/27", dow:"水", shift:"夜勤1日目", shiftClass:"night1", workTime:"21:00〜33:30", targetHours:4,
+    tasks:[
+      {id:"t527_1", label:"第3章① 高可用性/NW高可用性"},
+      {id:"t527_2", label:"Ping-t: RDS/Aurora残り"},
+      {id:"t527_3", label:"Ping-t: DynamoDB (13問)"},
+      {id:"t527_4", label:"夜勤隙間: Black Belt：S3"}
+    ], memo:"夜勤前に集中" },
+  { date:"5/28", dow:"木", shift:"夜勤2日目前", shiftClass:"night2pre", workTime:"21:00〜33:30", targetHours:0,
+    tasks:[{id:"t528_1", label:"勉強NG・睡眠優先（しっかり休む）"}], memo:"" },
+  { date:"5/29", dow:"金", shift:"夜勤明け", shiftClass:"nightafter", workTime:"〜16時帰宅", targetHours:2,
+    tasks:[
+      {id:"t529_1", label:"第3章② コンピューティング/ストレージ/DB高可用性（さらっと）"},
+      {id:"t529_2", label:"Ping-t: Lambda (14問)"}
+    ], memo:"16時帰宅→16〜18時のみ" },
+  { date:"5/30", dow:"土", shift:"休み", shiftClass:"off", workTime:"終日勉強可", targetHours:7,
+    tasks:[
+      {id:"t530_1", label:"第4章 パフォーマンス全範囲"},
+      {id:"t530_2", label:"第5章 コスト最適化全範囲"},
+      {id:"t530_3", label:"Ping-t: SNS/SQS (13問)"},
+      {id:"t530_4", label:"Ping-t: CloudWatch (10問)"},
+      {id:"t530_5", label:"模擬試験① 受験（目標60〜70%）"}
+    ], memo:"午前3h+午後4h" },
+  { date:"5/31", dow:"日", shift:"C勤", shiftClass:"", workTime:"09:00〜21:30", targetHours:1,
+    tasks:[
+      {id:"t531_1", label:"通勤Ping-t: ElastiCache (5問)"},
+      {id:"t531_2", label:"通勤Ping-t: Redshift (7問)"}
+    ], memo:"通勤Ping-t活用" },
+  { date:"6/1", dow:"月", shift:"B勤", shiftClass:"", workTime:"12:30〜21:30", targetHours:3,
+    tasks:[
+      {id:"t601_1", label:"全章復習・苦手分野集中"},
+      {id:"t601_2", label:"Ping-t: ECS/Fargate (15問)"},
+      {id:"t601_3", label:"Ping-t: DataSync/Snowball (4問)"}
+    ], memo:"午前中" },
+  { date:"6/2", dow:"火", shift:"B勤", shiftClass:"", workTime:"12:30〜21:30", targetHours:3,
+    tasks:[
+      {id:"t602_1", label:"過去問反復"},
+      {id:"t602_2", label:"Ping-t: Kinesis (6問)"},
+      {id:"t602_3", label:"Ping-t: Glue/EMR (8問)"},
+      {id:"t602_4", label:"Ping-t: Athena (3問)"}
+    ], memo:"午前中" },
+  { date:"6/3", dow:"水", shift:"休み", shiftClass:"off", workTime:"終日勉強可", targetHours:7,
+    tasks:[
+      {id:"t603_1", label:"試験レベル Well-Architected 全範囲"},
+      {id:"t603_2", label:"模擬試験② 受験（目標70〜75%）"},
+      {id:"t603_3", label:"弱点復習"}
+    ], memo:"終日" },
+  { date:"6/4", dow:"木", shift:"A勤", shiftClass:"", workTime:"08:30〜17:30", targetHours:3,
+    tasks:[
+      {id:"t604_1", label:"弱点分野集中"},
+      {id:"t604_2", label:"間違え問題の再演習"}
+    ], memo:"夕方〜夜" },
+  { date:"6/5", dow:"金", shift:"休み", shiftClass:"off", workTime:"終日勉強可", targetHours:7,
+    tasks:[
+      {id:"t605_1", label:"全章最終復習"},
+      {id:"t605_2", label:"模擬試験③ 受験（目標70〜75%）"},
+      {id:"t605_3", label:"苦手分野つぶし"}
+    ], memo:"終日" },
+  { date:"6/6", dow:"土", shift:"夜勤1日目", shiftClass:"night1", workTime:"21:00〜33:30", targetHours:3,
+    tasks:[
+      {id:"t606_1", label:"重要サービス総まとめ"},
+      {id:"t606_2", label:"試験レベル セキュリティ（一部）"},
+      {id:"t606_3", label:"夜勤隙間: Black Belt：IAM / CloudFront"}
+    ], memo:"夕方まで・夜勤前は無理しない" },
+  { date:"6/7", dow:"日", shift:"夜勤2日目前", shiftClass:"night2pre", workTime:"21:00〜33:30", targetHours:0,
+    tasks:[{id:"t607_1", label:"絶対に休む（勉強NG・睡眠優先）"}], memo:"" },
+  { date:"6/8", dow:"月", shift:"夜勤明け", shiftClass:"nightafter", workTime:"〜16時帰宅", targetHours:1.5,
+    tasks:[
+      {id:"t608_1", label:"模擬試験④ 復習のみ（目標80%以上）"},
+      {id:"t608_2", label:"苦手分野の確認のみ（新範囲NG）"}
+    ], memo:"16時帰宅→16〜17:30のみ" },
+  { date:"6/9", dow:"火", shift:"休み", shiftClass:"off", workTime:"終日勉強可", targetHours:4,
+    tasks:[
+      {id:"t609_1", label:"苦手ポイントのみ（新範囲NG）"},
+      {id:"t609_2", label:"21時には就寝（早寝厳守）"}
+    ], memo:"早寝厳守" },
+  { date:"6/10", dow:"水", shift:"試験日", shiftClass:"exam", workTime:"-", targetHours:0.5,
+    tasks:[
+      {id:"t610_1", label:"朝：重要サービスをさらっと眺める"},
+      {id:"t610_2", label:"本番試験：720点以上"}
+    ], memo:"体調最優先！食事・水分しっかり" }
+];
+
+const EXAMS = [
+  { id:"mock1", name:"模擬試験① (5/30)", target:"60〜70%" },
+  { id:"mock2", name:"模擬試験② (6/3)",  target:"70〜75%" },
+  { id:"mock3", name:"模擬試験③ (6/5)",  target:"70〜75%" },
+  { id:"mock4", name:"模擬試験④ (6/8)",  target:"80%以上" },
+  { id:"main",  name:"本番試験 (6/10)",  target:"720/1000点以上" }
+];
+
+const PRIORITY = [
+  { lv:"最優先", name:"VPC", q:44, ch:"第1章 1-2", cls:"prio-top" },
+  { lv:"最優先", name:"S3", q:38, ch:"第1章 1-5", cls:"prio-top" },
+  { lv:"最優先", name:"ELB/Auto Scaling", q:33, ch:"第3章 3-3", cls:"prio-top" },
+  { lv:"最優先", name:"EC2", q:23, ch:"第1章 1-4", cls:"prio-top" },
+  { lv:"最優先", name:"RDS/Aurora", q:22, ch:"第1章 1-6", cls:"prio-top" },
+  { lv:"最優先", name:"IAM/Organizations", q:19, ch:"第2章 2-2", cls:"prio-top" },
+  { lv:"最優先", name:"Route53", q:17, ch:"第1章 1-2", cls:"prio-top" },
+  { lv:"重要", name:"EBS", q:17, ch:"第1章 1-5", cls:"prio-mid" },
+  { lv:"重要", name:"EFS", q:14, ch:"第1章 1-5", cls:"prio-mid" },
+  { lv:"重要", name:"CloudFront/Global Accelerator", q:13, ch:"第1章 1-2", cls:"prio-mid" },
+  { lv:"重要", name:"SNS/SQS/MQ", q:13, ch:"第1章 1-8", cls:"prio-mid" },
+  { lv:"重要", name:"DynamoDB", q:13, ch:"第1章 1-6", cls:"prio-mid" },
+  { lv:"重要", name:"Direct Connect/VPN", q:10, ch:"第1章 1-2", cls:"prio-mid" },
+  { lv:"余裕があれば", name:"Kinesis/Glue/EMR/Athena/SageMaker", q:25, ch:"第1章 1-7", cls:"prio-low" },
+  { lv:"余裕があれば", name:"移行と転送系", q:9, ch:"第1章 1-8", cls:"prio-low" },
+  { lv:"完了済み", name:"AWSクラウドの基本", q:18, ch:"-", cls:"prio-done" }
+];
+
+const EXAM_DATE = new Date(2026, 5, 10); // 6/10
+const STORAGE_KEY = "saa_study_v1";
+
+// ===== State =====
+let state = {
+  checks: {},       // taskId -> bool
+  actualHours: {},  // date -> number
+  notes: {},        // date -> string
+  examScores: {},   // examId -> number
+  openDates: {}     // date -> bool
+};
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) state = Object.assign(state, JSON.parse(raw));
+  } catch(e) { console.warn(e); }
+}
+function saveState() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+  catch(e) { showToast("保存失敗"); }
+}
+
+// ===== Helpers =====
+function getToday() {
+  const now = new Date();
+  return (now.getMonth()+1) + "/" + now.getDate();
+}
+function isToday(dateStr) { return dateStr === getToday(); }
+
+function daysLeft() {
+  const now = new Date();
+  const ms = EXAM_DATE.getTime() - now.getTime();
+  return Math.max(0, Math.ceil(ms / 86400000));
+}
+
+function totalActualHours() {
+  return Object.values(state.actualHours).reduce((a,b) => a + (parseFloat(b)||0), 0);
+}
+function totalTargetHours() {
+  return SCHEDULE.reduce((a,d) => a + d.targetHours, 0);
+}
+function countTasks() {
+  let total = 0, done = 0;
+  SCHEDULE.forEach(d => {
+    d.tasks.forEach(t => {
+      total++;
+      if (state.checks[t.id]) done++;
+    });
+  });
+  return { total, done };
+}
+
+// ===== Header update =====
+function renderHeader() {
+  document.getElementById("days-left").textContent = daysLeft();
+  document.getElementById("total-hours").textContent = totalActualHours().toFixed(1);
+  const tc = countTasks();
+  document.getElementById("task-done").textContent = tc.done;
+  document.getElementById("task-total").textContent = "/ " + tc.total;
+  const pct = tc.total ? Math.round(tc.done / tc.total * 100) : 0;
+  document.getElementById("progress-fill").style.width = pct + "%";
+  document.getElementById("progress-text").textContent = "タスク進捗 " + pct + "%  ／  時間 " + Math.round(totalActualHours()/totalTargetHours()*100) + "%";
+}
+
+// ===== Schedule view =====
+function renderSchedule() {
+  const v = document.getElementById("view-schedule");
+  const today = getToday();
+  let html = "";
+  SCHEDULE.forEach(d => {
+    const todayCls = isToday(d.date) ? " today" : "";
+    const shiftCls = d.shiftClass ? " shift-" + d.shiftClass : "";
+    const open = !!state.openDates[d.date] || isToday(d.date);
+    const openCls = open ? " open" : "";
+    const dowCls = d.dow === "日" ? " sun" : d.dow === "土" ? " sat" : "";
+
+    const allDone = d.tasks.every(t => state.checks[t.id]);
+    const doneCls = allDone && d.tasks.length > 0 ? " done" : "";
+
+    let tasksHtml = "";
+    d.tasks.forEach(t => {
+      const checked = !!state.checks[t.id];
+      tasksHtml += `<label class="task${checked?" done":""}" data-task="${t.id}">
+        <input type="checkbox" ${checked?"checked":""}>
+        <span class="task-label">${escapeHtml(t.label)}</span>
+      </label>`;
+    });
+
+    const actual = state.actualHours[d.date] || "";
+    const note = state.notes[d.date] || "";
+
+    html += `<div class="day-card${todayCls}${shiftCls}${openCls}${doneCls}" data-date="${d.date}">
+      <div class="day-head" data-toggle="${d.date}">
+        <div class="day-head-l">
+          <div class="day-date">${d.date}</div>
+          <div class="day-dow${dowCls}">${d.dow}</div>
+          <div class="day-shift ${d.shiftClass}">${d.shift}</div>
+        </div>
+        <div>
+          <span class="day-time">${actual||"0"}<span class="target">/${d.targetHours}h</span></span>
+          <span class="toggle-arrow">▶</span>
+        </div>
+      </div>
+      <div class="day-body">
+        <div class="hint">勤務: ${d.workTime}${d.memo?"　／　"+escapeHtml(d.memo):""}</div>
+        ${d.tasks.length ? `<div class="day-section">
+          <div class="section-title">タスク</div>
+          ${tasksHtml}
+        </div>`:""}
+        <div class="day-section">
+          <div class="time-row">
+            <label>実績:</label>
+            <input type="number" class="time-input" data-actual="${d.date}" value="${actual}" step="0.5" min="0" max="24" inputmode="decimal">
+            <span class="time-target">/ 目標 ${d.targetHours}h</span>
+          </div>
+        </div>
+        <div class="day-section">
+          <div class="section-title">メモ</div>
+          <textarea class="note-input" data-note="${d.date}" placeholder="気づき・苦手・続きから...">${escapeHtml(note)}</textarea>
+        </div>
+      </div>
+    </div>`;
+  });
+  v.innerHTML = html;
+  bindScheduleEvents();
+}
+
+function bindScheduleEvents() {
+  document.querySelectorAll("[data-toggle]").forEach(el => {
+    el.addEventListener("click", e => {
+      if (e.target.closest("input, textarea, .task")) return;
+      const date = el.getAttribute("data-toggle");
+      state.openDates[date] = !state.openDates[date];
+      const card = el.closest(".day-card");
+      card.classList.toggle("open");
+      saveState();
+    });
+  });
+  document.querySelectorAll(".task").forEach(el => {
+    el.addEventListener("click", e => {
+      e.preventDefault();
+      const id = el.getAttribute("data-task");
+      state.checks[id] = !state.checks[id];
+      const cb = el.querySelector("input");
+      cb.checked = state.checks[id];
+      el.classList.toggle("done", state.checks[id]);
+      saveState();
+      renderHeader();
+      // mark whole-day done?
+      const card = el.closest(".day-card");
+      const date = card.getAttribute("data-date");
+      const day = SCHEDULE.find(d => d.date === date);
+      const allDone = day.tasks.every(t => state.checks[t.id]);
+      card.classList.toggle("done", allDone && day.tasks.length > 0);
+    });
+  });
+  document.querySelectorAll("[data-actual]").forEach(el => {
+    el.addEventListener("change", () => {
+      const date = el.getAttribute("data-actual");
+      const v = parseFloat(el.value);
+      if (isNaN(v) || v < 0) { state.actualHours[date] = 0; }
+      else { state.actualHours[date] = v; }
+      saveState();
+      renderHeader();
+      // update card time display
+      const card = el.closest(".day-card");
+      const head = card.querySelector(".day-time");
+      const day = SCHEDULE.find(d => d.date === date);
+      head.innerHTML = (state.actualHours[date]||"0") + '<span class="target">/'+day.targetHours+'h</span>';
+    });
+  });
+  document.querySelectorAll("[data-note]").forEach(el => {
+    el.addEventListener("input", () => {
+      const date = el.getAttribute("data-note");
+      state.notes[date] = el.value;
+      saveState();
+    });
+  });
+}
+
+// ===== Stats view =====
+function renderStats() {
+  const v = document.getElementById("view-stats");
+  const actual = totalActualHours();
+  const target = totalTargetHours();
+  const tc = countTasks();
+  const left = daysLeft();
+  const remaining = Math.max(0, target - actual);
+  const perDay = left > 0 ? (remaining / left).toFixed(1) : "0";
+
+  let priorityHtml = '<table class="priority-table"><tr><th>優先度</th><th>分野</th><th>問</th><th>章</th></tr>';
+  PRIORITY.forEach(p => {
+    priorityHtml += `<tr><td class="${p.cls}">${p.lv}</td><td>${p.name}</td><td>${p.q}</td><td>${p.ch}</td></tr>`;
+  });
+  priorityHtml += '</table>';
+
+  v.innerHTML = `
+    <div class="stat-card">
+      <h3>勉強時間</h3>
+      <div class="big-num">${actual.toFixed(1)}<span class="unit"> / ${target}h</span></div>
+      <div class="progress-bar" style="margin-top:10px"><div class="progress-fill" style="width:${Math.min(100, actual/target*100)}%"></div></div>
+      <div style="margin-top:12px">
+        <div class="kv-row"><span>残り日数</span><span class="v">${left}日</span></div>
+        <div class="kv-row"><span>残り目標時間</span><span class="v">${remaining.toFixed(1)}h</span></div>
+        <div class="kv-row"><span>1日あたり推奨</span><span class="v">${perDay}h/日</span></div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <h3>タスク進捗</h3>
+      <div class="big-num">${tc.done}<span class="unit"> / ${tc.total}</span></div>
+      <div class="progress-bar" style="margin-top:10px"><div class="progress-fill" style="width:${tc.total?tc.done/tc.total*100:0}%"></div></div>
+    </div>
+    <div class="stat-card">
+      <h3>Ping-t 分野別優先度</h3>
+      ${priorityHtml}
+    </div>
+  `;
+}
+
+// ===== Exam view =====
+function renderExam() {
+  const v = document.getElementById("view-exam");
+  let html = '<div class="stat-card"><h3>模擬試験スコア記録</h3>';
+  EXAMS.forEach(ex => {
+    const score = state.examScores[ex.id] || "";
+    let badge = '<span class="score-badge empty">未</span>';
+    if (score !== "") {
+      const sc = parseFloat(score);
+      const isMain = ex.id === "main";
+      if (isMain) {
+        if (sc >= 720) badge = '<span class="score-badge pass">合格</span>';
+        else if (sc >= 650) badge = '<span class="score-badge near">惜</span>';
+        else badge = '<span class="score-badge fail">要</span>';
+      } else {
+        let threshold = 70;
+        if (ex.id === "mock1") threshold = 60;
+        if (ex.id === "mock4") threshold = 80;
+        if (sc >= threshold) badge = '<span class="score-badge pass">達</span>';
+        else if (sc >= threshold - 10) badge = '<span class="score-badge near">近</span>';
+        else badge = '<span class="score-badge fail">要</span>';
+      }
+    }
+    const placeholder = ex.id === "main" ? "点数" : "%";
+    html += `<div class="exam-row">
+      <div>
+        <div class="exam-name">${ex.name}</div>
+        <span class="exam-target">目標: ${ex.target}</span>
+      </div>
+      <input type="number" class="exam-score-input" data-exam="${ex.id}" value="${score}" placeholder="${placeholder}" inputmode="decimal">
+      ${badge}
+    </div>`;
+  });
+  html += '</div>';
+
+  html += `<div class="stat-card">
+    <h3>直前週の心得</h3>
+    <div style="font-size:13px; line-height:1.7">
+      <div>・<b>6/7 夜勤2日目前</b>：絶対に休む（勉強NG）</div>
+      <div>・<b>6/8 夜勤明け</b>：模擬④の復習のみ・新範囲NG</div>
+      <div>・<b>6/9 前日</b>：苦手箇所のみ・21時就寝厳守</div>
+      <div>・<b>6/10 試験日</b>：体調最優先・食事と水分</div>
+    </div>
+  </div>`;
+
+  v.innerHTML = html;
+  document.querySelectorAll("[data-exam]").forEach(el => {
+    el.addEventListener("change", () => {
+      const id = el.getAttribute("data-exam");
+      const v = el.value.trim();
+      if (v === "") delete state.examScores[id];
+      else state.examScores[id] = parseFloat(v);
+      saveState();
+      renderExam();
+    });
+  });
+}
+
+// ===== Settings view =====
+function renderSettings() {
+  const v = document.getElementById("view-settings");
+  v.innerHTML = `
+    <div class="stat-card">
+      <h3>データ管理</h3>
+      <div class="hint">勉強記録はこの端末（ブラウザ）のみに保存されます。機種変更や履歴削除で消えるので、定期的にエクスポートしてください。</div>
+      <div class="settings-section">
+        <button class="btn primary" id="btn-export">エクスポート</button>
+        <button class="btn" id="btn-import">インポート</button>
+        <input type="file" id="file-import" accept="application/json" style="display:none">
+      </div>
+      <div class="settings-section">
+        <button class="btn danger" id="btn-reset">全データリセット</button>
+      </div>
+    </div>
+    <div class="stat-card">
+      <h3>使い方</h3>
+      <div style="font-size:13px; line-height:1.7">
+        <div>・カードをタップで詳細展開</div>
+        <div>・タスクをタップでチェック</div>
+        <div>・実績時間を入力すると統計に反映</div>
+        <div>・右下の「今日」ボタンで当日へジャンプ</div>
+        <div>・「ホーム画面に追加」でアプリ化</div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <h3>About</h3>
+      <div style="font-size:12px; color:var(--muted)">AWS SAA-C03 学習管理ツール v1.0</div>
+      <div style="font-size:12px; color:var(--muted)">期間: 2026/5/20 - 2026/6/10</div>
+    </div>
+  `;
+  document.getElementById("btn-export").addEventListener("click", exportData);
+  document.getElementById("btn-import").addEventListener("click", () => document.getElementById("file-import").click());
+  document.getElementById("file-import").addEventListener("change", importData);
+  document.getElementById("btn-reset").addEventListener("click", () => {
+    if (confirm("本当にすべての記録をリセットしますか？")) {
+      state = { checks:{}, actualHours:{}, notes:{}, examScores:{}, openDates:{} };
+      saveState();
+      renderAll();
+      showToast("リセットしました");
+    }
+  });
+}
+
+function exportData() {
+  const data = JSON.stringify(state, null, 2);
+  const blob = new Blob([data], { type:"application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "saa_study_backup_" + new Date().toISOString().slice(0,10) + ".json";
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast("エクスポートしました");
+}
+function importData(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try {
+      const data = JSON.parse(ev.target.result);
+      state = Object.assign({ checks:{}, actualHours:{}, notes:{}, examScores:{}, openDates:{} }, data);
+      saveState();
+      renderAll();
+      showToast("インポートしました");
+    } catch(err) { showToast("ファイルが不正です"); }
+  };
+  reader.readAsText(file);
+}
+
+// ===== Misc =====
+function escapeHtml(s) {
+  if (s == null) return "";
+  return String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
+}
+function showToast(msg) {
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  clearTimeout(showToast._t);
+  showToast._t = setTimeout(() => t.classList.remove("show"), 1500);
+}
+
+function switchView(name) {
+  document.querySelectorAll(".tab").forEach(t => t.classList.toggle("active", t.getAttribute("data-view") === name));
+  document.querySelectorAll(".view").forEach(v => v.classList.toggle("active", v.id === "view-" + name));
+  if (name === "stats") renderStats();
+  if (name === "exam") renderExam();
+  if (name === "settings") renderSettings();
+  window.scrollTo({ top:0, behavior:"smooth" });
+}
+
+function scrollToToday() {
+  switchView("schedule");
+  setTimeout(() => {
+    const today = getToday();
+    const el = document.querySelector(`[data-date="${today}"]`);
+    if (el) {
+      el.scrollIntoView({ behavior:"smooth", block:"start" });
+      el.classList.add("open");
+      state.openDates[today] = true;
+      saveState();
+    } else {
+      showToast("今日は期間外です");
+    }
+  }, 100);
+}
+
+function renderAll() {
+  renderHeader();
+  renderSchedule();
+}
+
+// ===== Init =====
+document.querySelectorAll(".tab").forEach(t => {
+  t.addEventListener("click", () => switchView(t.getAttribute("data-view")));
+});
+document.getElementById("today-btn").addEventListener("click", scrollToToday);
+
+loadState();
+renderAll();
+
+// auto-scroll to today on first load
+setTimeout(() => {
+  const today = getToday();
+  const el = document.querySelector(`[data-date="${today}"]`);
+  if (el) el.scrollIntoView({ behavior:"auto", block:"center" });
+}, 100);
+
+// Register Service Worker (only when served over http/https, not file://)
+if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("sw.js")
+      .then(() => console.log("[SW] registered"))
+      .catch((err) => console.warn("[SW] register failed:", err));
+  });
+}
+</script>
+</body>
+</html>
