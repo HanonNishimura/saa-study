@@ -543,6 +543,7 @@ const STORAGE_KEY = "saa_study_v1";
 let state = {
   checks: {},       // taskId -> bool
   actualHours: {},  // date -> number
+  gapQuestions: {}, // date -> number (隙間時間で解いた問題数)
   notes: {},        // date -> string
   examScores: {},   // examId -> number
   openDates: {}     // date -> bool
@@ -577,6 +578,12 @@ function totalActualHours() {
 }
 function totalTargetHours() {
   return SCHEDULE.reduce((a,d) => a + d.targetHours, 0);
+}
+function totalGapQuestions() {
+  return Object.values(state.gapQuestions).reduce((a,b) => a + (parseInt(b,10)||0), 0);
+}
+function daysWithGapQ() {
+  return Object.values(state.gapQuestions).filter(v => (parseInt(v,10)||0) > 0).length;
 }
 function countTasks() {
   let total = 0, done = 0;
@@ -652,6 +659,11 @@ function renderSchedule() {
             <input type="number" class="time-input" data-actual="${d.date}" value="${actual}" step="0.5" min="0" max="24" inputmode="decimal">
             <span class="time-target">/ 目標 ${d.targetHours}h</span>
           </div>
+          <div class="time-row">
+            <label>隙間問題:</label>
+            <input type="number" class="time-input" data-gapq="${d.date}" value="${state.gapQuestions[d.date]||""}" step="1" min="0" max="999" inputmode="numeric" placeholder="0">
+            <span class="time-target">問（通勤・夜勤隙間）</span>
+          </div>
         </div>
         <div class="day-section">
           <div class="section-title">メモ</div>
@@ -708,6 +720,15 @@ function bindScheduleEvents() {
       head.innerHTML = (state.actualHours[date]||"0") + '<span class="target">/'+day.targetHours+'h</span>';
     });
   });
+  document.querySelectorAll("[data-gapq]").forEach(el => {
+    el.addEventListener("change", () => {
+      const date = el.getAttribute("data-gapq");
+      const v = parseInt(el.value, 10);
+      if (isNaN(v) || v <= 0) { delete state.gapQuestions[date]; el.value = ""; }
+      else { state.gapQuestions[date] = v; }
+      saveState();
+    });
+  });
   document.querySelectorAll("[data-note]").forEach(el => {
     el.addEventListener("input", () => {
       const date = el.getAttribute("data-note");
@@ -748,6 +769,15 @@ function renderStats() {
       <h3>タスク進捗</h3>
       <div class="big-num">${tc.done}<span class="unit"> / ${tc.total}</span></div>
       <div class="progress-bar" style="margin-top:10px"><div class="progress-fill" style="width:${tc.total?tc.done/tc.total*100:0}%"></div></div>
+    </div>
+    <div class="stat-card">
+      <h3>隙間時間 問題演習</h3>
+      <div class="big-num">${totalGapQuestions()}<span class="unit"> 問</span></div>
+      <div style="margin-top:12px">
+        <div class="kv-row"><span>記録した日数</span><span class="v">${daysWithGapQ()}日</span></div>
+        <div class="kv-row"><span>1日平均</span><span class="v">${daysWithGapQ()?(totalGapQuestions()/daysWithGapQ()).toFixed(1):"0"}問</span></div>
+        <div class="kv-row"><span>Ping-t目安(10問/日)</span><span class="v">${Math.round(totalGapQuestions()/10*10)/10}日分</span></div>
+      </div>
     </div>
     <div class="stat-card">
       <h3>Ping-t 分野別優先度</h3>
@@ -851,7 +881,7 @@ function renderSettings() {
   document.getElementById("file-import").addEventListener("change", importData);
   document.getElementById("btn-reset").addEventListener("click", () => {
     if (confirm("本当にすべての記録をリセットしますか？")) {
-      state = { checks:{}, actualHours:{}, notes:{}, examScores:{}, openDates:{} };
+      state = { checks:{}, actualHours:{}, gapQuestions:{}, notes:{}, examScores:{}, openDates:{} };
       saveState();
       renderAll();
       showToast("リセットしました");
@@ -877,7 +907,7 @@ function importData(e) {
   reader.onload = ev => {
     try {
       const data = JSON.parse(ev.target.result);
-      state = Object.assign({ checks:{}, actualHours:{}, notes:{}, examScores:{}, openDates:{} }, data);
+      state = Object.assign({ checks:{}, actualHours:{}, gapQuestions:{}, notes:{}, examScores:{}, openDates:{} }, data);
       saveState();
       renderAll();
       showToast("インポートしました");
