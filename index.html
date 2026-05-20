@@ -85,10 +85,11 @@ header {
   background: rgba(0,0,0,0.3); border-radius: 8px; padding: 3px;
 }
 .tab {
-  flex: 1; padding: 8px 4px; text-align: center;
-  font-size: 12px; font-weight: 600; color: var(--muted);
+  flex: 1; padding: 8px 2px; text-align: center;
+  font-size: 11px; font-weight: 600; color: var(--muted);
   background: transparent; border: none; border-radius: 6px;
   cursor: pointer; transition: all 0.2s;
+  white-space: nowrap;
 }
 .tab.active { background: var(--accent); color: #fff; }
 
@@ -328,6 +329,42 @@ main { padding: 12px 12px 20px; }
 .prio-low { color: var(--muted); }
 .prio-done { color: var(--ok); }
 
+/* ===== Decks view ===== */
+.deck-cat {
+  font-size: 11px; color: var(--accent); font-weight: 700;
+  margin: 12px 0 6px; padding-top: 8px;
+  border-top: 1px solid var(--border);
+}
+.deck-cat:first-of-type { border-top: none; padding-top: 0; margin-top: 4px; }
+
+/* デッキ割り当て（日付カード内） */
+.deck-assign-row {
+  display: flex; align-items: center; gap: 8px;
+  padding: 7px 8px; margin-bottom: 4px;
+  background: rgba(0,0,0,0.2); border-radius: 8px;
+  min-height: 38px;
+}
+.deck-assign-row input[type="checkbox"] {
+  width: 20px; height: 20px; margin: 0; flex-shrink: 0;
+  accent-color: var(--accent); cursor: pointer;
+}
+.deck-assign-name { flex: 1; font-size: 13px; line-height: 1.4; }
+.deck-assign-row.done .deck-assign-name { text-decoration: line-through; color: var(--muted); }
+.deck-remove {
+  flex-shrink: 0; width: 26px; height: 26px;
+  background: transparent; border: 1px solid var(--border); border-radius: 6px;
+  color: var(--muted); font-size: 16px; line-height: 1; cursor: pointer;
+  font-family: inherit;
+}
+.deck-remove:active { background: var(--border); }
+.deck-add-select {
+  width: 100%; margin-top: 4px;
+  background: rgba(0,0,0,0.3); color: var(--text);
+  border: 1px solid var(--border); border-radius: 6px;
+  padding: 8px; font-size: 13px; font-family: inherit;
+}
+.deck-add-select:focus { outline: none; border-color: var(--accent); }
+
 /* ===== Toast ===== */
 .toast {
   position: fixed; bottom: 86px; left: 50%; transform: translateX(-50%);
@@ -370,6 +407,7 @@ main { padding: 12px 12px 20px; }
   <div class="progress-text" id="progress-text">進捗 0%</div>
   <div class="tabs">
     <button class="tab active" data-view="schedule">スケジュール</button>
+    <button class="tab" data-view="decks">デッキ</button>
     <button class="tab" data-view="stats">統計</button>
     <button class="tab" data-view="exam">模擬試験</button>
     <button class="tab" data-view="settings">設定</button>
@@ -378,6 +416,7 @@ main { padding: 12px 12px 20px; }
 
 <main>
   <div class="view active" id="view-schedule"></div>
+  <div class="view" id="view-decks"></div>
   <div class="view" id="view-stats"></div>
   <div class="view" id="view-exam"></div>
   <div class="view" id="view-settings"></div>
@@ -392,80 +431,55 @@ const SCHEDULE = [
   { date:"5/20", dow:"水", shift:"夜勤1日目", shiftClass:"night1", workTime:"21:00〜33:30", targetHours:4,
     tasks:[
       {id:"t520_1", label:"第1章① Well-Architected/ネットワーク基礎"},
-      {id:"t520_2", label:"Ping-t: EC2 (23問)"},
       {id:"t520_3", label:"夜勤隙間: Black Belt：VPC"}
     ], memo:"夜勤前に集中・夜勤明けは休む" },
   { date:"5/21", dow:"木", shift:"夜勤2日目前", shiftClass:"night2pre", workTime:"21:00〜33:30", targetHours:0,
     tasks:[{id:"t521_1", label:"勉強NG・睡眠優先（しっかり休む）"}], memo:"" },
   { date:"5/22", dow:"金", shift:"夜勤明け", shiftClass:"nightafter", workTime:"〜16時帰宅", targetHours:2,
     tasks:[
-      {id:"t522_1", label:"第1章② アクセス制御/コンピューティング（さらっと）"},
-      {id:"t522_2", label:"Ping-t: IAM (19問)"}
+      {id:"t522_1", label:"第1章② アクセス制御/コンピューティング（さらっと）"}
     ], memo:"16時帰宅→16〜18時のみ" },
   { date:"5/23", dow:"土", shift:"休み", shiftClass:"off", workTime:"終日勉強可", targetHours:7,
     tasks:[
       {id:"t523_1", label:"第1章③ ストレージ/DB"},
-      {id:"t523_2", label:"第1章④ データ処理/構成管理"},
-      {id:"t523_3", label:"Ping-t: S3 (38問)"},
-      {id:"t523_4", label:"Ping-t: VPC (44問)"},
-      {id:"t523_5", label:"Ping-t: ELB/Auto Scaling (33問)"}
+      {id:"t523_2", label:"第1章④ データ処理/構成管理"}
     ], memo:"午前3h+午後4h" },
   { date:"5/24", dow:"日", shift:"C勤", shiftClass:"", workTime:"09:00〜21:30", targetHours:1,
-    tasks:[
-      {id:"t524_1", label:"通勤Ping-t: RDS/Aurora (10問)"}
-    ], memo:"持込不可・通勤Ping-t活用" },
+    tasks:[], memo:"持込不可・通勤の隙間時間でデッキを進める" },
   { date:"5/25", dow:"月", shift:"B勤", shiftClass:"", workTime:"12:30〜21:30", targetHours:3,
     tasks:[
-      {id:"t525_1", label:"第2章① セキュリティ設計/IAM"},
-      {id:"t525_2", label:"Ping-t: KMS/CloudHSM (8問)"},
-      {id:"t525_3", label:"Ping-t: WAF/Shield (6問)"}
+      {id:"t525_1", label:"第2章① セキュリティ設計/IAM"}
     ], memo:"午前中に集中" },
   { date:"5/26", dow:"火", shift:"休み", shiftClass:"off", workTime:"終日勉強可", targetHours:7,
     tasks:[
-      {id:"t526_1", label:"第2章② NWセキュリティ/データ保護/監視"},
-      {id:"t526_2", label:"Ping-t: Route53 (17問)"},
-      {id:"t526_3", label:"Ping-t: CloudFront (13問)"},
-      {id:"t526_4", label:"Ping-t: Direct Connect (10問)"}
+      {id:"t526_1", label:"第2章② NWセキュリティ/データ保護/監視"}
     ], memo:"終日" },
   { date:"5/27", dow:"水", shift:"夜勤1日目", shiftClass:"night1", workTime:"21:00〜33:30", targetHours:4,
     tasks:[
       {id:"t527_1", label:"第3章① 高可用性/NW高可用性"},
-      {id:"t527_2", label:"Ping-t: RDS/Aurora残り"},
-      {id:"t527_3", label:"Ping-t: DynamoDB (13問)"},
       {id:"t527_4", label:"夜勤隙間: Black Belt：S3"}
     ], memo:"夜勤前に集中" },
   { date:"5/28", dow:"木", shift:"夜勤2日目前", shiftClass:"night2pre", workTime:"21:00〜33:30", targetHours:0,
     tasks:[{id:"t528_1", label:"勉強NG・睡眠優先（しっかり休む）"}], memo:"" },
   { date:"5/29", dow:"金", shift:"夜勤明け", shiftClass:"nightafter", workTime:"〜16時帰宅", targetHours:2,
     tasks:[
-      {id:"t529_1", label:"第3章② コンピューティング/ストレージ/DB高可用性（さらっと）"},
-      {id:"t529_2", label:"Ping-t: Lambda (14問)"}
+      {id:"t529_1", label:"第3章② コンピューティング/ストレージ/DB高可用性（さらっと）"}
     ], memo:"16時帰宅→16〜18時のみ" },
   { date:"5/30", dow:"土", shift:"休み", shiftClass:"off", workTime:"終日勉強可", targetHours:7,
     tasks:[
       {id:"t530_1", label:"第4章 パフォーマンス全範囲"},
       {id:"t530_2", label:"第5章 コスト最適化全範囲"},
-      {id:"t530_3", label:"Ping-t: SNS/SQS (13問)"},
-      {id:"t530_4", label:"Ping-t: CloudWatch (10問)"},
       {id:"t530_5", label:"模擬試験① 受験（目標60〜70%）"}
     ], memo:"午前3h+午後4h" },
   { date:"5/31", dow:"日", shift:"C勤", shiftClass:"", workTime:"09:00〜21:30", targetHours:1,
-    tasks:[
-      {id:"t531_1", label:"通勤Ping-t: ElastiCache (5問)"},
-      {id:"t531_2", label:"通勤Ping-t: Redshift (7問)"}
-    ], memo:"通勤Ping-t活用" },
+    tasks:[], memo:"通勤の隙間時間でデッキを進める" },
   { date:"6/1", dow:"月", shift:"B勤", shiftClass:"", workTime:"12:30〜21:30", targetHours:3,
     tasks:[
-      {id:"t601_1", label:"全章復習・苦手分野集中"},
-      {id:"t601_2", label:"Ping-t: ECS/Fargate (15問)"},
-      {id:"t601_3", label:"Ping-t: DataSync/Snowball (4問)"}
+      {id:"t601_1", label:"全章復習・苦手分野集中"}
     ], memo:"午前中" },
   { date:"6/2", dow:"火", shift:"B勤", shiftClass:"", workTime:"12:30〜21:30", targetHours:3,
     tasks:[
-      {id:"t602_1", label:"過去問反復"},
-      {id:"t602_2", label:"Ping-t: Kinesis (6問)"},
-      {id:"t602_3", label:"Ping-t: Glue/EMR (8問)"},
-      {id:"t602_4", label:"Ping-t: Athena (3問)"}
+      {id:"t602_1", label:"過去問反復"}
     ], memo:"午前中" },
   { date:"6/3", dow:"水", shift:"休み", shiftClass:"off", workTime:"終日勉強可", targetHours:7,
     tasks:[
@@ -536,6 +550,108 @@ const PRIORITY = [
   { lv:"完了済み", name:"AWSクラウドの基本", q:18, ch:"-", cls:"prio-done" }
 ];
 
+// ===== Decks (Ping-t デッキ一覧 / 問題数は非表示) =====
+const DECK_GROUPS = [
+  { cat:"AWSクラウドの基本", decks:[
+    { id:"dk_onpremise",   name:"オンプレミスとクラウド" },
+    { id:"dk_awsoverview", name:"AWSの概要" }
+  ]},
+  { cat:"主要なサービス", decks:[
+    { id:"dk_ec2",    name:"EC2" },
+    { id:"dk_s3",     name:"S3" },
+    { id:"dk_vpc",    name:"VPC" },
+    { id:"dk_iam_org",name:"IAM/Organizations" },
+    { id:"dk_elb_as", name:"ELB/Auto Scaling" }
+  ]},
+  { cat:"コンピューティング", decks:[
+    { id:"dk_lambda_apigw",    name:"Lambda/API Gateway" },
+    { id:"dk_ecs_fargate_eks", name:"ECS/Fargate/EKS" },
+    { id:"dk_batch_a2c",       name:"Batch/App2Container" }
+  ]},
+  { cat:"ストレージ", decks:[
+    { id:"dk_ebs", name:"EBS" },
+    { id:"dk_efs", name:"EFS" },
+    { id:"dk_fsx", name:"FSx" },
+    { id:"dk_sgw", name:"Storage Gateway" }
+  ]},
+  { cat:"データベース", decks:[
+    { id:"dk_rds_aurora",    name:"RDS/Aurora" },
+    { id:"dk_redshift_docdb",name:"Redshift/DocumentDB" },
+    { id:"dk_dynamodb",      name:"DynamoDB" },
+    { id:"dk_elasticache",   name:"ElastiCache" }
+  ]},
+  { cat:"マネジメント、ガバナンス", decks:[
+    { id:"dk_cloudwatch", name:"CloudWatch" },
+    { id:"dk_cloudtrail", name:"CloudTrail" },
+    { id:"dk_cfn_eb",     name:"CloudFormation/Elastic Beanstalk" },
+    { id:"dk_ta_co",      name:"Trusted Advisor/Compute Optimizer" },
+    { id:"dk_ssm",        name:"Systems Manager" },
+    { id:"dk_ce_budgets", name:"Cost Explorer/Budgets" },
+    { id:"dk_config_ct",  name:"Config/Control Tower" },
+    { id:"dk_backup_drs", name:"Backup/DRS" }
+  ]},
+  { cat:"セキュリティ、アイデンティティ、コンプライアンス", decks:[
+    { id:"dk_waf_shield_fm",       name:"WAF/Shield/Firewall Manager" },
+    { id:"dk_kms_hsm",             name:"KMS/CloudHSM" },
+    { id:"dk_secrets_acm",         name:"Secrets Manager/ACM" },
+    { id:"dk_sts_dir_idc_cognito", name:"STS/Directory Service/IAM Identity Center/Cognito" },
+    { id:"dk_macie_inspector_sh",  name:"Macie/Inspector/Security Hub" }
+  ]},
+  { cat:"ネットワーク、コンテンツ配信", decks:[
+    { id:"dk_route53", name:"Route 53" },
+    { id:"dk_cf_ga",   name:"CloudFront/Global Accelerator" },
+    { id:"dk_dx_vpn",  name:"Direct Connect/VPN" }
+  ]},
+  { cat:"移行と転送", decks:[
+    { id:"dk_datasync_snowball", name:"DataSync/Snowball" },
+    { id:"dk_migration",         name:"Migration Hub/ADS/MGN/DMS" }
+  ]},
+  { cat:"アプリケーション統合", decks:[
+    { id:"dk_sns_sqs_mq",      name:"SNS/SQS/MQ" },
+    { id:"dk_eventbridge_sfn", name:"EventBridge/Step Functions" }
+  ]},
+  { cat:"分析", decks:[
+    { id:"dk_kinesis_firehose",  name:"Kinesis/Data Firehose" },
+    { id:"dk_msk_flink",         name:"MSK/Managed Service for Apache Flink" },
+    { id:"dk_glue_emr",          name:"Glue/EMR" },
+    { id:"dk_athena_quicksight", name:"Athena/QuickSight" }
+  ]},
+  { cat:"機械学習", decks:[
+    { id:"dk_sagemaker", name:"SageMaker" },
+    { id:"dk_ml_misc",   name:"Comprehend/Translate/Kendra/Transcribe/Polly/Lex/Rekognition/Textract" }
+  ]},
+  { cat:"その他のサービスなど", decks:[
+    { id:"dk_misc",        name:"その他のサービス" },
+    { id:"dk_war_overview",name:"Well-Architected Frameworkの概要" }
+  ]},
+  { cat:"【試験レベル】Well-Architected Frameworkに基づいた設計", decks:[
+    { id:"dk_war_ops",  name:"運用上の優秀性" },
+    { id:"dk_war_sec",  name:"セキュリティ" },
+    { id:"dk_war_rel",  name:"信頼性" },
+    { id:"dk_war_perf", name:"パフォーマンス効率" },
+    { id:"dk_war_cost", name:"コスト最適化" }
+  ]}
+];
+
+// deckId -> deck オブジェクト の逆引き
+const DECK_BY_ID = {};
+DECK_GROUPS.forEach(g => g.decks.forEach(d => { DECK_BY_ID[d.id] = d; }));
+
+// 「デッキを追加」セレクトのオプション（指定日に割当済みは無効化）
+function deckOptionsHtml(excludeIds) {
+  excludeIds = excludeIds || [];
+  let html = '<option value="">＋ デッキを追加…</option>';
+  DECK_GROUPS.forEach(g => {
+    html += `<optgroup label="${escapeHtml(g.cat)}">`;
+    g.decks.forEach(d => {
+      const dis = excludeIds.includes(d.id) ? ' disabled' : '';
+      html += `<option value="${d.id}"${dis}>${escapeHtml(d.name)}</option>`;
+    });
+    html += '</optgroup>';
+  });
+  return html;
+}
+
 const EXAM_DATE = new Date(2026, 5, 10); // 6/10
 const STORAGE_KEY = "saa_study_v1";
 
@@ -546,7 +662,9 @@ let state = {
   gapQuestions: {}, // date -> number (隙間時間で解いた問題数)
   notes: {},        // date -> string
   examScores: {},   // examId -> number
-  openDates: {}     // date -> bool
+  openDates: {},    // date -> bool
+  deckDone: {},     // deckId -> bool (実施したデッキ)
+  dayDecks: {}      // date -> [deckId, ...] (その日に割り当てたデッキ)
 };
 
 function loadState() {
@@ -635,6 +753,19 @@ function renderSchedule() {
     const actual = state.actualHours[d.date] || "";
     const note = state.notes[d.date] || "";
 
+    const assigned = state.dayDecks[d.date] || [];
+    let dayDecksHtml = "";
+    assigned.forEach(id => {
+      const deck = DECK_BY_ID[id];
+      if (!deck) return;
+      const done = !!state.deckDone[id];
+      dayDecksHtml += `<div class="deck-assign-row${done?" done":""}" data-dassign="${d.date}|${id}">
+        <input type="checkbox" ${done?"checked":""}>
+        <span class="deck-assign-name">${escapeHtml(deck.name)}</span>
+        <button class="deck-remove" data-dremove="${d.date}|${id}" title="このデッキを外す">×</button>
+      </div>`;
+    });
+
     html += `<div class="day-card${todayCls}${shiftCls}${openCls}${doneCls}" data-date="${d.date}">
       <div class="day-head" data-toggle="${d.date}">
         <div class="day-head-l">
@@ -653,6 +784,13 @@ function renderSchedule() {
           <div class="section-title">タスク</div>
           ${tasksHtml}
         </div>`:""}
+        <div class="day-section">
+          <div class="section-title">デッキ</div>
+          ${dayDecksHtml}
+          <select class="deck-add-select" data-deckadd="${d.date}">
+            ${deckOptionsHtml(assigned)}
+          </select>
+        </div>
         <div class="day-section">
           <div class="time-row">
             <label>実績:</label>
@@ -687,7 +825,7 @@ function bindScheduleEvents() {
       saveState();
     });
   });
-  document.querySelectorAll(".task").forEach(el => {
+  document.querySelectorAll("#view-schedule .task").forEach(el => {
     el.addEventListener("click", e => {
       e.preventDefault();
       const id = el.getAttribute("data-task");
@@ -734,6 +872,111 @@ function bindScheduleEvents() {
       const date = el.getAttribute("data-note");
       state.notes[date] = el.value;
       saveState();
+    });
+  });
+  // デッキ追加
+  document.querySelectorAll("[data-deckadd]").forEach(el => {
+    el.addEventListener("change", () => {
+      const date = el.getAttribute("data-deckadd");
+      const id = el.value;
+      if (!id) return;
+      if (!state.dayDecks[date]) state.dayDecks[date] = [];
+      if (!state.dayDecks[date].includes(id)) state.dayDecks[date].push(id);
+      saveState();
+      renderSchedule();
+    });
+  });
+  // デッキ削除（×）
+  document.querySelectorAll("[data-dremove]").forEach(el => {
+    el.addEventListener("click", e => {
+      e.preventDefault(); e.stopPropagation();
+      const parts = el.getAttribute("data-dremove").split("|");
+      const date = parts[0], id = parts[1];
+      state.dayDecks[date] = (state.dayDecks[date] || []).filter(x => x !== id);
+      if (state.dayDecks[date].length === 0) delete state.dayDecks[date];
+      saveState();
+      renderSchedule();
+    });
+  });
+  // デッキの実施チェック（その日のカード内 / deckDoneと連動）
+  document.querySelectorAll("[data-dassign]").forEach(el => {
+    el.addEventListener("click", e => {
+      if (e.target.closest(".deck-remove")) return;
+      e.preventDefault();
+      const parts = el.getAttribute("data-dassign").split("|");
+      const id = parts[1];
+      state.deckDone[id] = !state.deckDone[id];
+      const cb = el.querySelector('input[type="checkbox"]');
+      cb.checked = state.deckDone[id];
+      el.classList.toggle("done", state.deckDone[id]);
+      saveState();
+    });
+  });
+}
+
+// ===== Decks view =====
+function deckStats() {
+  let total = 0, done = 0;
+  DECK_GROUPS.forEach(g => g.decks.forEach(d => {
+    total++;
+    if (state.deckDone[d.id]) done++;
+  }));
+  return { total, done };
+}
+
+function renderDecks() {
+  const v = document.getElementById("view-decks");
+  const ds = deckStats();
+  const pct = ds.total ? Math.round(ds.done / ds.total * 100) : 0;
+
+  // --- Section 1: 実施チェック ---
+  let doneHtml = "";
+  DECK_GROUPS.forEach(g => {
+    doneHtml += `<div class="deck-cat">${escapeHtml(g.cat)}</div>`;
+    g.decks.forEach(d => {
+      const checked = !!state.deckDone[d.id];
+      doneHtml += `<label class="task deck-row${checked?" done":""}" data-deck="${d.id}">
+        <input type="checkbox" ${checked?"checked":""}>
+        <span class="task-label">${escapeHtml(d.name)}</span>
+      </label>`;
+    });
+  });
+
+  v.innerHTML = `
+    <div class="stat-card" id="deck-done-card">
+      <h3>デッキ実施チェック（全体一覧）</h3>
+      <div class="big-num" id="deck-done-num">${ds.done}<span class="unit"> / ${ds.total} デッキ</span></div>
+      <div class="progress-bar" style="margin-top:10px"><div class="progress-fill" id="deck-done-fill" style="width:${pct}%"></div></div>
+      <div class="progress-text" id="deck-done-text">完了 ${pct}%</div>
+      <div class="hint">学習し終えたデッキにチェック（タップでON/OFF）。スケジュールの各日付に割り当てたデッキのチェックともここで連動します。</div>
+      ${doneHtml}
+    </div>
+  `;
+  bindDeckEvents();
+}
+
+function updateDeckProgress() {
+  const ds = deckStats();
+  const pct = ds.total ? Math.round(ds.done / ds.total * 100) : 0;
+  const num = document.getElementById("deck-done-num");
+  const fill = document.getElementById("deck-done-fill");
+  const text = document.getElementById("deck-done-text");
+  if (num) num.innerHTML = ds.done + '<span class="unit"> / ' + ds.total + ' デッキ</span>';
+  if (fill) fill.style.width = pct + "%";
+  if (text) text.textContent = "完了 " + pct + "%";
+}
+
+function bindDeckEvents() {
+  document.querySelectorAll("[data-deck]").forEach(el => {
+    el.addEventListener("click", e => {
+      e.preventDefault();
+      const id = el.getAttribute("data-deck");
+      state.deckDone[id] = !state.deckDone[id];
+      const cb = el.querySelector("input");
+      cb.checked = state.deckDone[id];
+      el.classList.toggle("done", state.deckDone[id]);
+      saveState();
+      updateDeckProgress();
     });
   });
 }
@@ -881,7 +1124,7 @@ function renderSettings() {
   document.getElementById("file-import").addEventListener("change", importData);
   document.getElementById("btn-reset").addEventListener("click", () => {
     if (confirm("本当にすべての記録をリセットしますか？")) {
-      state = { checks:{}, actualHours:{}, gapQuestions:{}, notes:{}, examScores:{}, openDates:{} };
+      state = { checks:{}, actualHours:{}, gapQuestions:{}, notes:{}, examScores:{}, openDates:{}, deckDone:{}, dayDecks:{} };
       saveState();
       renderAll();
       showToast("リセットしました");
@@ -907,7 +1150,7 @@ function importData(e) {
   reader.onload = ev => {
     try {
       const data = JSON.parse(ev.target.result);
-      state = Object.assign({ checks:{}, actualHours:{}, gapQuestions:{}, notes:{}, examScores:{}, openDates:{} }, data);
+      state = Object.assign({ checks:{}, actualHours:{}, gapQuestions:{}, notes:{}, examScores:{}, openDates:{}, deckDone:{}, dayDecks:{} }, data);
       saveState();
       renderAll();
       showToast("インポートしました");
@@ -932,6 +1175,7 @@ function showToast(msg) {
 function switchView(name) {
   document.querySelectorAll(".tab").forEach(t => t.classList.toggle("active", t.getAttribute("data-view") === name));
   document.querySelectorAll(".view").forEach(v => v.classList.toggle("active", v.id === "view-" + name));
+  if (name === "decks") renderDecks();
   if (name === "stats") renderStats();
   if (name === "exam") renderExam();
   if (name === "settings") renderSettings();
