@@ -364,6 +364,14 @@ main { padding: 12px 12px 20px; }
   padding: 8px; font-size: 13px; font-family: inherit;
 }
 .deck-add-select:focus { outline: none; border-color: var(--accent); }
+.deck-prio-group { margin-bottom: 12px; }
+.deck-prio-label {
+  font-size: 11px; font-weight: 700; margin-bottom: 5px;
+  padding: 2px 8px; border-radius: 4px; display: inline-block;
+}
+.deck-prio-high { background: rgba(239,83,80,0.18); color: #ff8a80; }
+.deck-prio-mid  { background: rgba(255,183,77,0.18); color: #ffb74d; }
+.deck-prio-low  { background: rgba(139,150,168,0.18); color: var(--muted); }
 
 /* ===== Toast ===== */
 .toast {
@@ -652,6 +660,100 @@ function deckOptionsHtml(excludeIds) {
   return html;
 }
 
+// 優先度（高・中・低）
+const DECK_PRIOS = [
+  { key:"high", label:"優先度 高" },
+  { key:"mid",  label:"優先度 中" },
+  { key:"low",  label:"優先度 低" }
+];
+
+// その日の割り当てを {high:[], mid:[], low:[]} に正規化（旧形式=配列は「中」へ移行）
+function getDayDeckBuckets(date) {
+  let b = state.dayDecks[date];
+  if (!b) return { high:[], mid:[], low:[] };
+  if (Array.isArray(b)) { b = { high:[], mid:b.slice(), low:[] }; state.dayDecks[date] = b; }
+  return { high: b.high || [], mid: b.mid || [], low: b.low || [] };
+}
+
+// 日付カード内「デッキ」欄のHTML（優先度3グループ + 各グループに追加欄）
+function dayDeckSectionHtml(date) {
+  const buckets = getDayDeckBuckets(date);
+  const assignedAll = [].concat(buckets.high, buckets.mid, buckets.low);
+  let html = "";
+  DECK_PRIOS.forEach(p => {
+    html += `<div class="deck-prio-group">
+      <div class="deck-prio-label deck-prio-${p.key}">${p.label}</div>`;
+    (buckets[p.key] || []).forEach(id => {
+      const deck = DECK_BY_ID[id];
+      if (!deck) return;
+      const done = !!state.deckDone[id];
+      html += `<div class="deck-assign-row${done?" done":""}" data-dassign="${date}|${id}">
+        <input type="checkbox" ${done?"checked":""}>
+        <span class="deck-assign-name">${escapeHtml(deck.name)}</span>
+        <button class="deck-remove" data-dremove="${date}|${p.key}|${id}" title="このデッキを外す">×</button>
+      </div>`;
+    });
+    html += `<select class="deck-add-select" data-deckadd="${date}|${p.key}">
+        ${deckOptionsHtml(assignedAll)}
+      </select>
+    </div>`;
+  });
+  return html;
+}
+
+// 該当日のデッキ欄だけを部分更新（カードは開いたまま）
+function refreshDayDecks(date) {
+  const wrap = document.querySelector('[data-deckwrap="' + date + '"]');
+  if (!wrap) return;
+  wrap.innerHTML = dayDeckSectionHtml(date);
+  bindDeckControls(wrap);
+}
+
+// デッキ欄のイベント（root配下のみバインド）
+function bindDeckControls(root) {
+  root = root || document;
+  root.querySelectorAll("[data-deckadd]").forEach(el => {
+    el.addEventListener("change", () => {
+      const parts = el.getAttribute("data-deckadd").split("|");
+      const date = parts[0], prio = parts[1];
+      const id = el.value;
+      if (!id) return;
+      const buckets = getDayDeckBuckets(date);
+      const all = [].concat(buckets.high, buckets.mid, buckets.low);
+      if (!all.includes(id)) buckets[prio].push(id);
+      state.dayDecks[date] = buckets;
+      saveState();
+      refreshDayDecks(date);
+    });
+  });
+  root.querySelectorAll("[data-dremove]").forEach(el => {
+    el.addEventListener("click", e => {
+      e.preventDefault(); e.stopPropagation();
+      const parts = el.getAttribute("data-dremove").split("|");
+      const date = parts[0], prio = parts[1], id = parts[2];
+      const buckets = getDayDeckBuckets(date);
+      buckets[prio] = (buckets[prio] || []).filter(x => x !== id);
+      if (!buckets.high.length && !buckets.mid.length && !buckets.low.length) delete state.dayDecks[date];
+      else state.dayDecks[date] = buckets;
+      saveState();
+      refreshDayDecks(date);
+    });
+  });
+  root.querySelectorAll("[data-dassign]").forEach(el => {
+    el.addEventListener("click", e => {
+      if (e.target.closest(".deck-remove")) return;
+      e.preventDefault();
+      const parts = el.getAttribute("data-dassign").split("|");
+      const id = parts[1];
+      state.deckDone[id] = !state.deckDone[id];
+      const cb = el.querySelector('input[type="checkbox"]');
+      cb.checked = state.deckDone[id];
+      el.classList.toggle("done", state.deckDone[id]);
+      saveState();
+    });
+  });
+}
+
 const EXAM_DATE = new Date(2026, 5, 10); // 6/10
 const STORAGE_KEY = "saa_study_v1";
 
@@ -753,19 +855,6 @@ function renderSchedule() {
     const actual = state.actualHours[d.date] || "";
     const note = state.notes[d.date] || "";
 
-    const assigned = state.dayDecks[d.date] || [];
-    let dayDecksHtml = "";
-    assigned.forEach(id => {
-      const deck = DECK_BY_ID[id];
-      if (!deck) return;
-      const done = !!state.deckDone[id];
-      dayDecksHtml += `<div class="deck-assign-row${done?" done":""}" data-dassign="${d.date}|${id}">
-        <input type="checkbox" ${done?"checked":""}>
-        <span class="deck-assign-name">${escapeHtml(deck.name)}</span>
-        <button class="deck-remove" data-dremove="${d.date}|${id}" title="このデッキを外す">×</button>
-      </div>`;
-    });
-
     html += `<div class="day-card${todayCls}${shiftCls}${openCls}${doneCls}" data-date="${d.date}">
       <div class="day-head" data-toggle="${d.date}">
         <div class="day-head-l">
@@ -786,10 +875,9 @@ function renderSchedule() {
         </div>`:""}
         <div class="day-section">
           <div class="section-title">デッキ</div>
-          ${dayDecksHtml}
-          <select class="deck-add-select" data-deckadd="${d.date}">
-            ${deckOptionsHtml(assigned)}
-          </select>
+          <div class="day-decks-wrap" data-deckwrap="${d.date}">
+            ${dayDeckSectionHtml(d.date)}
+          </div>
         </div>
         <div class="day-section">
           <div class="time-row">
@@ -874,44 +962,8 @@ function bindScheduleEvents() {
       saveState();
     });
   });
-  // デッキ追加
-  document.querySelectorAll("[data-deckadd]").forEach(el => {
-    el.addEventListener("change", () => {
-      const date = el.getAttribute("data-deckadd");
-      const id = el.value;
-      if (!id) return;
-      if (!state.dayDecks[date]) state.dayDecks[date] = [];
-      if (!state.dayDecks[date].includes(id)) state.dayDecks[date].push(id);
-      saveState();
-      renderSchedule();
-    });
-  });
-  // デッキ削除（×）
-  document.querySelectorAll("[data-dremove]").forEach(el => {
-    el.addEventListener("click", e => {
-      e.preventDefault(); e.stopPropagation();
-      const parts = el.getAttribute("data-dremove").split("|");
-      const date = parts[0], id = parts[1];
-      state.dayDecks[date] = (state.dayDecks[date] || []).filter(x => x !== id);
-      if (state.dayDecks[date].length === 0) delete state.dayDecks[date];
-      saveState();
-      renderSchedule();
-    });
-  });
-  // デッキの実施チェック（その日のカード内 / deckDoneと連動）
-  document.querySelectorAll("[data-dassign]").forEach(el => {
-    el.addEventListener("click", e => {
-      if (e.target.closest(".deck-remove")) return;
-      e.preventDefault();
-      const parts = el.getAttribute("data-dassign").split("|");
-      const id = parts[1];
-      state.deckDone[id] = !state.deckDone[id];
-      const cb = el.querySelector('input[type="checkbox"]');
-      cb.checked = state.deckDone[id];
-      el.classList.toggle("done", state.deckDone[id]);
-      saveState();
-    });
-  });
+  // デッキ欄（追加・削除・実施チェック）は部分更新方式でバインド
+  bindDeckControls(document);
 }
 
 // ===== Decks view =====
