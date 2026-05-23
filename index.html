@@ -203,6 +203,22 @@ main { padding: 12px 12px 20px; }
   text-decoration: line-through;
   color: var(--muted);
 }
+.carryover-section {
+  background: rgba(239, 83, 80, 0.08);
+  border: 1px solid rgba(239, 83, 80, 0.35);
+  border-radius: 8px;
+  padding: 8px;
+  margin-top: 10px;
+}
+.carryover-section .section-title { color: var(--bad); }
+.task.carryover { background: rgba(239, 83, 80, 0.12); }
+.carry-from {
+  display: inline-block;
+  font-size: 10px; font-weight: 700;
+  color: #fff; background: var(--bad);
+  border-radius: 4px; padding: 1px 5px; margin-right: 6px;
+  vertical-align: middle;
+}
 
 /* ===== Time input ===== */
 .time-row {
@@ -845,6 +861,24 @@ function renderHeader() {
   document.getElementById("progress-text").textContent = "タスク進捗 " + pct + "%  ／  時間 " + Math.round(totalActualHours()/totalTargetHours()*100) + "%";
 }
 
+// ===== Carryover (前日までの未完了を当日に引き継ぐ) =====
+function getTodayIndex() {
+  return SCHEDULE.findIndex(d => isToday(d.date));
+}
+function getCarryoverTasks() {
+  const ti = getTodayIndex();
+  if (ti <= 0) return [];
+  const list = [];
+  for (let i = 0; i < ti; i++) {
+    const d = SCHEDULE[i];
+    if (d.targetHours <= 0) continue; // 勉強NG・休養日は対象外
+    d.tasks.forEach(t => {
+      if (!state.checks[t.id]) list.push({ id:t.id, label:t.label, from:d.date });
+    });
+  }
+  return list;
+}
+
 // ===== Schedule view =====
 function renderSchedule() {
   const v = document.getElementById("view-schedule");
@@ -869,6 +903,25 @@ function renderSchedule() {
       </label>`;
     });
 
+    // 今日のカードには前日までの未完了タスクを「繰り越し」として表示
+    let carryHtml = "";
+    if (isToday(d.date)) {
+      const carry = getCarryoverTasks();
+      if (carry.length) {
+        let items = "";
+        carry.forEach(c => {
+          items += `<label class="task carryover" data-task="${c.id}">
+            <input type="checkbox">
+            <span class="task-label"><span class="carry-from">${c.from}</span>${escapeHtml(c.label)}</span>
+          </label>`;
+        });
+        carryHtml = `<div class="day-section carryover-section">
+          <div class="section-title">⚠ 繰り越し（前日までの未完了 ${carry.length}件）</div>
+          ${items}
+        </div>`;
+      }
+    }
+
     const actual = state.actualHours[d.date] || "";
     const note = state.notes[d.date] || "";
 
@@ -886,6 +939,7 @@ function renderSchedule() {
       </div>
       <div class="day-body">
         <div class="hint">勤務: ${d.workTime}${d.memo?"　／　"+escapeHtml(d.memo):""}</div>
+        ${carryHtml}
         ${d.tasks.length ? `<div class="day-section">
           <div class="section-title">タスク</div>
           ${tasksHtml}
@@ -935,17 +989,12 @@ function bindScheduleEvents() {
       e.preventDefault();
       const id = el.getAttribute("data-task");
       state.checks[id] = !state.checks[id];
-      const cb = el.querySelector("input");
-      cb.checked = state.checks[id];
-      el.classList.toggle("done", state.checks[id]);
       saveState();
+      // 同一タスクが「元の日」と「今日の繰り越し」の両方に出るため全体を再描画して同期
+      const sy = window.scrollY;
+      renderSchedule();
       renderHeader();
-      // mark whole-day done?
-      const card = el.closest(".day-card");
-      const date = card.getAttribute("data-date");
-      const day = SCHEDULE.find(d => d.date === date);
-      const allDone = day.tasks.every(t => state.checks[t.id]);
-      card.classList.toggle("done", allDone && day.tasks.length > 0);
+      window.scrollTo(0, sy);
     });
   });
   document.querySelectorAll("[data-actual]").forEach(el => {
