@@ -440,62 +440,62 @@ const SCHEDULE = [
     tasks:[
       {id:"sec_11", label:"1-1 Well-Architectedフレームワーク (p.12)"},
       {id:"sec_12", label:"1-2 ネットワークサービス ★VPC/Route53/CloudFront (p.16)"},
-      {id:"sec_13", label:"1-3 アクセス制御サービス (p.38)"},
-      {id:"sec_14", label:"1-4 コンピューティングサービス ★EC2 (p.43)"},
-      {id:"sec_15", label:"1-5 ストレージサービス ★S3/EBS/EFS (p.71)"},
       {id:"t520_3", label:"夜勤隙間: Black Belt：VPC"}
-    ], memo:"1-1〜1-3は昨日完了済み→チェックを入れて。今日(4h)は最優先のEC2(1-4)・S3(1-5)に集中。夜勤前に。" },
+    ], memo:"完了済み(1-1・1-2)→チェックを入れて記録。" },
   { date:"5/21", dow:"木", shift:"夜勤2日目前", shiftClass:"night2pre", workTime:"21:00〜33:30", targetHours:0,
     tasks:[{id:"t521_1", label:"勉強NG・睡眠優先（しっかり休む）"}], memo:"" },
   { date:"5/22", dow:"金", shift:"夜勤明け", shiftClass:"nightafter", workTime:"〜16時帰宅", targetHours:2,
     tasks:[
-      {id:"sec_17", label:"1-7 データ処理・分析サービス (p.119)"},
-      {id:"sec_18", label:"1-8 構成管理・開発サービス ★SNS/SQS (p.129)"}
-    ], memo:"16時帰宅→16〜18時のみ(2h)。軽めの1-7・1-8で第1章を読了。" },
-  { date:"5/23", dow:"土", shift:"休み", shiftClass:"off", workTime:"終日勉強可", targetHours:7,
+      {id:"sec_13", label:"1-3 アクセス制御サービス (p.38)"}
+    ], memo:"完了済み(1-3)→チェックを入れて記録。" },
+  { date:"5/23", dow:"土", shift:"休み", shiftClass:"off", workTime:"今日は4hのみ", targetHours:4,
     tasks:[
-      {id:"sec_16", label:"1-6 データベースサービス ★RDS/Aurora/DynamoDB (p.90)"},
-      {id:"sec_21", label:"2-1 セキュリティ設計の考え方 (p.150)"},
-      {id:"sec_22", label:"2-2 アイデンティティ管理とアクセス管理 ★IAM (p.155)"}
-    ], memo:"終日7h。最優先のRDS(1-6)・IAM(2-2)をここで攻略。重い1-6があるので午前から。" },
+      {id:"sec_14", label:"1-4 コンピューティングサービス ★EC2 (p.43)"},
+      {id:"sec_15", label:"1-5 ストレージサービス ★S3/EBS/EFS (p.71)"}
+    ], memo:"今日は4hなので最優先のEC2(1-4)・S3(1-5)に集中(計47p)。" },
   { date:"5/24", dow:"日", shift:"C勤", shiftClass:"", workTime:"09:00〜21:30", targetHours:1,
     tasks:[], memo:"持込不可・通勤の隙間時間でデッキを進める" },
   { date:"5/25", dow:"月", shift:"B勤", shiftClass:"", workTime:"12:30〜21:30", targetHours:3,
     tasks:[
-      {id:"sec_23", label:"2-3 ネットワークセキュリティ (p.171)"},
-      {id:"sec_24", label:"2-4 データの保護 (p.184)"}
-    ], memo:"午前中に集中(3h)" },
+      {id:"sec_16", label:"1-6 データベースサービス ★RDS/Aurora/DynamoDB (p.90)"},
+      {id:"sec_17", label:"1-7 データ処理・分析サービス (p.119)"}
+    ], memo:"午前中に集中(3h)。最優先のRDS/Aurora(1-6)を攻略。" },
   { date:"5/26", dow:"火", shift:"休み", shiftClass:"off", workTime:"終日勉強可", targetHours:7,
     tasks:[
-      {id:"sec_25", label:"2-5 セキュリティ監視 (p.195)"},
+      {id:"sec_18", label:"1-8 構成管理・開発サービス ★SNS/SQS (p.129)"},
+      {id:"sec_21", label:"2-1 セキュリティ設計の考え方 (p.150)"},
+      {id:"sec_22", label:"2-2 アイデンティティ管理とアクセス管理 ★IAM (p.155)"},
+      {id:"sec_23", label:"2-3 ネットワークセキュリティ (p.171)"},
+      {id:"sec_24", label:"2-4 データの保護 (p.184)"},
+      {id:"sec_25", label:"2-5 セキュリティ監視 (p.195)"}
+    ], memo:"終日7h。最優先のIAM(2-2)含む。第1章を完結させ第2章を一気に読了。" },
+  { date:"5/27", dow:"水", shift:"夜勤1日目", shiftClass:"night1", workTime:"21:00〜33:30", targetHours:4,
+    tasks:[
       {id:"sec_31", label:"3-1 高可用性の定義 (p.206)"},
       {id:"sec_32", label:"3-2 ネットワークにおける高可用性 (p.212)"},
       {id:"sec_33", label:"3-3 コンピューティングにおける高可用性 ★ELB/Auto Scaling (p.221)"},
-      {id:"sec_34", label:"3-4 ストレージにおける高可用性 (p.243)"}
-    ], memo:"終日7h。最優先のELB/Auto Scaling(3-3)を含む。第3章を一気に進める。" },
-  { date:"5/27", dow:"水", shift:"夜勤1日目", shiftClass:"night1", workTime:"21:00〜33:30", targetHours:4,
-    tasks:[
-      {id:"sec_35", label:"3-5 データベースにおける高可用性 (p.254)"},
-      {id:"sec_41", label:"4-1 パフォーマンスの考え方 (p.262)"},
-      {id:"sec_42", label:"4-2 ネットワークのパフォーマンス (p.265)"},
-      {id:"sec_43", label:"4-3 コンピューティングのパフォーマンス (p.274)"},
-      {id:"sec_44", label:"4-4 ストレージのパフォーマンス (p.283)"},
+      {id:"sec_34", label:"3-4 ストレージにおける高可用性 (p.243)"},
       {id:"t527_4", label:"夜勤隙間: Black Belt：S3"}
-    ], memo:"夜勤前に集中(4h)。第4章前半まで。" },
+    ], memo:"夜勤前に集中(4h)。最優先のELB/Auto Scaling(3-3)を含む第3章。" },
   { date:"5/28", dow:"木", shift:"夜勤2日目前", shiftClass:"night2pre", workTime:"21:00〜33:30", targetHours:0,
     tasks:[{id:"t528_1", label:"勉強NG・睡眠優先（しっかり休む）"}], memo:"" },
   { date:"5/29", dow:"金", shift:"夜勤明け", shiftClass:"nightafter", workTime:"〜16時帰宅", targetHours:2,
     tasks:[
-      {id:"sec_45", label:"4-5 データベースのパフォーマンス (p.288)"},
-      {id:"sec_51", label:"5-1 コスト最適化の考え方 (p.300)"}
-    ], memo:"16時帰宅→16〜18時のみ(2h)。軽め。" },
+      {id:"sec_35", label:"3-5 データベースにおける高可用性 (p.254)"},
+      {id:"sec_41", label:"4-1 パフォーマンスの考え方 (p.262)"},
+      {id:"sec_42", label:"4-2 ネットワークのパフォーマンス (p.265)"}
+    ], memo:"16時帰宅→16〜18時のみ(2h)。第3章を締めて第4章へ。" },
   { date:"5/30", dow:"土", shift:"休み", shiftClass:"off", workTime:"終日勉強可", targetHours:7,
     tasks:[
+      {id:"sec_43", label:"4-3 コンピューティングのパフォーマンス (p.274)"},
+      {id:"sec_44", label:"4-4 ストレージのパフォーマンス (p.283)"},
+      {id:"sec_45", label:"4-5 データベースのパフォーマンス (p.288)"},
+      {id:"sec_51", label:"5-1 コスト最適化の考え方 (p.300)"},
       {id:"sec_52", label:"5-2 コスト効果が高いリソースの選定 (p.305)"},
       {id:"sec_53", label:"5-3 需要と供給のマッチング (p.318)"},
       {id:"sec_54", label:"5-4 コストの管理 (p.326)"},
       {id:"t530_5", label:"模擬試験① 受験（目標60〜70%）"}
-    ], memo:"午前3h+午後4h。参考書はここで全節読了→そのまま模試①へ！" },
+    ], memo:"午前に第4・5章を読了→午後に模試①！ここで全参考書フィニッシュ。" },
   { date:"5/31", dow:"日", shift:"C勤", shiftClass:"", workTime:"09:00〜21:30", targetHours:1,
     tasks:[], memo:"通勤の隙間時間でデッキを進める" },
   { date:"6/1", dow:"月", shift:"B勤", shiftClass:"", workTime:"12:30〜21:30", targetHours:3,
