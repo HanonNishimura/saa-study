@@ -364,7 +364,7 @@ main { padding: 12px 12px 20px; }
   width: 20px; height: 20px; margin: 0; flex-shrink: 0;
   accent-color: var(--accent); cursor: pointer;
 }
-.deck-assign-name { flex: 1; font-size: 13px; line-height: 1.4; }
+.deck-assign-name { flex: 1; font-size: 13px; line-height: 1.4; color: var(--text); }
 .deck-assign-row.done .deck-assign-name { text-decoration: line-through; color: var(--muted); }
 .deck-remove {
   flex-shrink: 0; width: 26px; height: 26px;
@@ -388,6 +388,30 @@ main { padding: 12px 12px 20px; }
 .deck-prio-high { background: rgba(239,83,80,0.18); color: #ff8a80; }
 .deck-prio-mid  { background: rgba(255,183,77,0.18); color: #ffb74d; }
 .deck-prio-low  { background: rgba(139,150,168,0.18); color: var(--muted); }
+
+/* ===== Update banner ===== */
+.update-banner {
+  position: fixed; left: 12px; right: 12px;
+  bottom: calc(14px + env(safe-area-inset-bottom));
+  z-index: 300;
+  background: var(--accent); color: #fff;
+  border-radius: 12px; padding: 12px 14px;
+  display: none; align-items: center; justify-content: space-between;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.45);
+  font-size: 13px; font-weight: 600;
+}
+.update-banner.show { display: flex; }
+.update-banner button {
+  background: #fff; color: var(--accent);
+  border: none; border-radius: 8px;
+  padding: 8px 18px; font-size: 13px; font-weight: 700;
+  font-family: inherit; cursor: pointer; flex-shrink: 0; margin-left: 12px;
+}
+.update-banner button:active { opacity: 0.8; }
+
+/* ===== Backup status ===== */
+.backup-status { font-size: 12px; color: var(--muted); margin: 2px 2px 10px; }
+.backup-status.warn { color: var(--warn); font-weight: 600; }
 
 /* ===== Toast ===== */
 .toast {
@@ -448,6 +472,10 @@ main { padding: 12px 12px 20px; }
 
 <button class="today-btn" id="today-btn" title="今日へ">今日</button>
 <div class="toast" id="toast"></div>
+<div class="update-banner" id="update-banner">
+  <span>新しいバージョンがあります</span>
+  <button id="update-btn">更新</button>
+</div>
 
 <script>
 // ===== Schedule data =====
@@ -799,7 +827,8 @@ let state = {
   examScores: {},   // examId -> number
   openDates: {},    // date -> bool
   deckDone: {},     // deckId -> bool (実施したデッキ)
-  dayDecks: {}      // date -> [deckId, ...] (その日に割り当てたデッキ)
+  dayDecks: {},     // date -> [deckId, ...] (その日に割り当てたデッキ)
+  lastBackup: 0     // 最終エクスポート時刻(epoch ms)
 };
 
 function loadState() {
@@ -1212,6 +1241,7 @@ function renderSettings() {
     <div class="stat-card">
       <h3>データ管理</h3>
       <div class="hint">勉強記録はこの端末（ブラウザ）のみに保存されます。機種変更や履歴削除で消えるので、定期的にエクスポートしてください。</div>
+      <div class="backup-status ${backupOverdue()?"warn":""}">${backupStatusText()}</div>
       <div class="settings-section">
         <button class="btn primary" id="btn-export">エクスポート</button>
         <button class="btn" id="btn-import">インポート</button>
@@ -1233,7 +1263,7 @@ function renderSettings() {
     </div>
     <div class="stat-card">
       <h3>About</h3>
-      <div style="font-size:12px; color:var(--muted)">AWS SAA-C03 学習管理ツール v1.0</div>
+      <div style="font-size:12px; color:var(--muted)">AWS SAA-C03 学習管理ツール v1.1</div>
       <div style="font-size:12px; color:var(--muted)">期間: 2026/5/20 - 2026/6/10</div>
     </div>
   `;
@@ -1242,7 +1272,7 @@ function renderSettings() {
   document.getElementById("file-import").addEventListener("change", importData);
   document.getElementById("btn-reset").addEventListener("click", () => {
     if (confirm("本当にすべての記録をリセットしますか？")) {
-      state = { checks:{}, actualHours:{}, gapQuestions:{}, notes:{}, examScores:{}, openDates:{}, deckDone:{}, dayDecks:{} };
+      state = { checks:{}, actualHours:{}, gapQuestions:{}, notes:{}, examScores:{}, openDates:{}, deckDone:{}, dayDecks:{}, lastBackup:0 };
       saveState();
       renderAll();
       showToast("リセットしました");
@@ -1259,7 +1289,33 @@ function exportData() {
   a.download = "saa_study_backup_" + new Date().toISOString().slice(0,10) + ".json";
   a.click();
   URL.revokeObjectURL(url);
+  state.lastBackup = Date.now();
+  saveState();
   showToast("エクスポートしました");
+  if (document.getElementById("view-settings").classList.contains("active")) renderSettings();
+}
+
+// ===== Backup status helpers =====
+function daysSinceBackup() {
+  if (!state.lastBackup) return null;
+  return Math.floor((Date.now() - state.lastBackup) / 86400000);
+}
+function hasAnyData() {
+  return Object.keys(state.checks).length || Object.keys(state.actualHours).length ||
+         Object.keys(state.gapQuestions).length || Object.keys(state.examScores).length ||
+         Object.keys(state.deckDone).length;
+}
+function backupOverdue() {
+  if (!hasAnyData()) return false;
+  const d = daysSinceBackup();
+  return d === null || d >= 3;
+}
+function backupStatusText() {
+  const d = daysSinceBackup();
+  if (d === null) return "⚠ まだバックアップしていません。エクスポートを推奨します。";
+  if (d === 0) return "✓ 今日バックアップ済み";
+  if (d === 1) return "前回バックアップ: 昨日";
+  return (backupOverdue() ? "⚠ " : "") + "前回バックアップ: " + d + "日前";
 }
 function importData(e) {
   const file = e.target.files[0];
@@ -1268,7 +1324,7 @@ function importData(e) {
   reader.onload = ev => {
     try {
       const data = JSON.parse(ev.target.result);
-      state = Object.assign({ checks:{}, actualHours:{}, gapQuestions:{}, notes:{}, examScores:{}, openDates:{}, deckDone:{}, dayDecks:{} }, data);
+      state = Object.assign({ checks:{}, actualHours:{}, gapQuestions:{}, notes:{}, examScores:{}, openDates:{}, deckDone:{}, dayDecks:{}, lastBackup:0 }, data);
       saveState();
       renderAll();
       showToast("インポートしました");
@@ -1337,12 +1393,50 @@ setTimeout(() => {
   if (el) el.scrollIntoView({ behavior:"auto", block:"center" });
 }, 100);
 
-// Register Service Worker (only when served over http/https, not file://)
+// バックアップ催促（記録があり、3日以上未バックアップなら起動時にそっと通知）
+setTimeout(() => { if (backupOverdue()) showToast("バックアップ推奨：設定→エクスポート"); }, 1300);
+
+// ===== Register Service Worker + 更新検知 (http/https のみ) =====
+let swRegistration = null;
+function showUpdateBanner() {
+  const b = document.getElementById("update-banner");
+  if (b) b.classList.add("show");
+}
+const updateBtn = document.getElementById("update-btn");
+if (updateBtn) {
+  updateBtn.addEventListener("click", () => {
+    if (swRegistration && swRegistration.waiting) {
+      swRegistration.waiting.postMessage({ type:"SKIP_WAITING" });
+    } else {
+      window.location.reload();
+    }
+  });
+}
 if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
+  let reloaded = false;
+  navigator.serviceWorker.addEventListener("controllerchange", () => {
+    if (reloaded) return;
+    reloaded = true;
+    window.location.reload();
+  });
   window.addEventListener("load", () => {
-    navigator.serviceWorker.register("sw.js")
-      .then(() => console.log("[SW] registered"))
-      .catch((err) => console.warn("[SW] register failed:", err));
+    navigator.serviceWorker.register("sw.js").then((reg) => {
+      swRegistration = reg;
+      // 既に待機中の新版があればすぐ通知
+      if (reg.waiting && navigator.serviceWorker.controller) showUpdateBanner();
+      // 新版を検知したら通知
+      reg.addEventListener("updatefound", () => {
+        const nw = reg.installing;
+        if (!nw) return;
+        nw.addEventListener("statechange", () => {
+          if (nw.state === "installed" && navigator.serviceWorker.controller) showUpdateBanner();
+        });
+      });
+    }).catch((err) => console.warn("[SW] register failed:", err));
+    // アプリに戻ってきたタイミングで更新チェック
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "visible" && swRegistration) swRegistration.update().catch(()=>{});
+    });
   });
 }
 </script>

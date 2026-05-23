@@ -1,5 +1,5 @@
 // Service Worker for SAA Study App
-const CACHE_VERSION = "saa-v1.0.5";
+const CACHE_VERSION = "saa-v1.0.7";
 const ASSETS = [
   "./",
   "./index.html",
@@ -8,13 +8,16 @@ const ASSETS = [
   "./icon-maskable.svg"
 ];
 
-// Install: pre-cache all assets
+// Install: pre-cache all assets（skipWaitingはしない＝更新はユーザーが「更新」ボタンで反映）
 self.addEventListener("install", (event) => {
   event.waitUntil(
-    caches.open(CACHE_VERSION)
-      .then((cache) => cache.addAll(ASSETS))
-      .then(() => self.skipWaiting())
+    caches.open(CACHE_VERSION).then((cache) => cache.addAll(ASSETS))
   );
+});
+
+// ページから「更新」ボタンが押されたら待機中SWを即有効化
+self.addEventListener("message", (event) => {
+  if (event.data && event.data.type === "SKIP_WAITING") self.skipWaiting();
 });
 
 // Activate: remove old caches
