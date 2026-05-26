@@ -414,6 +414,50 @@ main { padding: 12px 12px 20px; }
 }
 .deck-pip-row.started .deck-rep-count { color: var(--accent); font-weight: 700; }
 
+/* ===== Study material view ===== */
+.study-chap { font-size: 12px; font-weight: 700; color: var(--accent); margin: 14px 2px 6px; }
+.study-sec { background: var(--surface); border-radius: 10px; margin-bottom: 8px; overflow: hidden; }
+.study-sec-head {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  padding: 11px 12px; cursor: pointer; user-select: none; min-height: 44px;
+}
+.study-sec-title { font-size: 13.5px; line-height: 1.35; }
+.study-sec-meta { font-size: 11px; color: var(--muted); flex-shrink: 0; }
+.study-sec .toggle-arrow { display: inline-block; transition: transform 0.2s; }
+.study-sec.open .toggle-arrow { transform: rotate(90deg); }
+.study-sec-body { display: none; padding: 0 12px 12px; border-top: 1px solid var(--border); }
+.study-sec.open .study-sec-body { display: block; }
+.study-sub-title {
+  font-size: 11px; font-weight: 700; color: var(--accent);
+  letter-spacing: 0.04em; margin: 12px 0 6px;
+}
+.study-kw {
+  white-space: pre-wrap; font-size: 12px; line-height: 1.6; color: var(--text);
+  background: rgba(0,0,0,0.2); border-radius: 8px; padding: 10px; margin: 0; font-family: inherit;
+}
+.term-row { padding: 7px 8px; margin-bottom: 4px; background: rgba(0,0,0,0.18); border-radius: 8px; }
+.term-t { font-size: 12.5px; font-weight: 700; color: var(--text); }
+.term-m { font-size: 12px; color: var(--muted); line-height: 1.5; margin-top: 2px; }
+.point-row { padding: 7px 8px; margin-bottom: 4px; background: rgba(0,0,0,0.18); border-radius: 8px; font-size: 12px; line-height: 1.55; }
+.point-i { display: block; font-weight: 700; color: var(--accent); font-size: 11.5px; margin-bottom: 2px; }
+.point-x { color: var(--text); }
+.quiz-q { padding: 10px; margin-bottom: 8px; background: rgba(0,0,0,0.22); border-radius: 8px; }
+.quiz-qtext { font-size: 13px; line-height: 1.5; margin-bottom: 8px; }
+.quiz-choices { display: flex; flex-direction: column; gap: 6px; }
+.quiz-choice {
+  text-align: left; font-family: inherit; font-size: 12.5px; line-height: 1.4;
+  padding: 9px 10px; border-radius: 8px; border: 1px solid var(--border);
+  background: var(--surface2); color: var(--text); cursor: pointer;
+}
+.quiz-choice:active { background: var(--border); }
+.quiz-choice.correct { border-color: var(--ok); background: rgba(76,175,80,0.18); color: #a5d6a7; }
+.quiz-choice.wrong { border-color: var(--bad); background: rgba(239,83,80,0.18); color: #ef9a9a; }
+.quiz-exp { margin-top: 8px; font-size: 12px; line-height: 1.55; color: var(--muted); background: rgba(0,0,0,0.25); border-radius: 8px; padding: 8px; }
+.quiz-exp.hidden { display: none; }
+.quiz-badge { font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 4px; margin-left: 6px; }
+.quiz-badge.ok { background: var(--ok); color: #fff; }
+.quiz-badge.ng { background: var(--bad); color: #fff; }
+
 /* ===== Update banner ===== */
 .update-banner {
   position: fixed; left: 12px; right: 12px;
@@ -479,16 +523,18 @@ main { padding: 12px 12px 20px; }
   <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
   <div class="progress-text" id="progress-text">進捗 0%</div>
   <div class="tabs">
-    <button class="tab active" data-view="schedule">スケジュール</button>
+    <button class="tab active" data-view="schedule">予定</button>
+    <button class="tab" data-view="study">教材</button>
     <button class="tab" data-view="decks">デッキ</button>
     <button class="tab" data-view="stats">統計</button>
-    <button class="tab" data-view="exam">模擬試験</button>
+    <button class="tab" data-view="exam">模試</button>
     <button class="tab" data-view="settings">設定</button>
   </div>
 </header>
 
 <main>
   <div class="view active" id="view-schedule"></div>
+  <div class="view" id="view-study"></div>
   <div class="view" id="view-decks"></div>
   <div class="view" id="view-stats"></div>
   <div class="view" id="view-exam"></div>
@@ -502,6 +548,7 @@ main { padding: 12px 12px 20px; }
   <button id="update-btn">更新</button>
 </div>
 
+<script src="study_data.js"></script>
 <script>
 // ===== Schedule data =====
 const SCHEDULE = [
@@ -896,7 +943,9 @@ let state = {
   deckDoneByDate: {},  // date -> { deckId: true } 日付ごとの実施チェック（独立）
   dayDecks: {},     // date -> [deckId, ...] (その日に割り当てたデッキ)
   lastBackup: 0,    // 最終エクスポート時刻(epoch ms)
-  decksSeeded: false // ◎デッキの初期投入済みフラグ
+  decksSeeded: false, // ◎デッキの初期投入済みフラグ
+  quiz: {},         // "sec#n" -> { r:"o"|"x", c:選択肢index } 確認テストの解答
+  studyOpen: {}     // sec -> bool 教材タブの節の開閉
 };
 
 function loadState() {
@@ -1207,6 +1256,124 @@ function bindDeckEvents() {
   });
 }
 
+// ===== Study material view (教材＋確認テスト) =====
+function quizStats() {
+  let total = 0, ans = 0, correct = 0;
+  if (typeof STUDY_DATA === "undefined") return { total:0, ans:0, correct:0, wrong:0 };
+  for (const sec in STUDY_DATA) {
+    (STUDY_DATA[sec].quiz || []).forEach(q => {
+      total++;
+      const r = state.quiz[sec + "#" + q.n];
+      if (r) { ans++; if (r.r === "o") correct++; }
+    });
+  }
+  return { total, ans, correct, wrong: ans - correct };
+}
+
+function quizHtml(sec, quiz) {
+  return quiz.map(q => {
+    const qid = sec + "#" + q.n;
+    const res = state.quiz[qid];
+    const correctIdx = "ABCD".indexOf(q.a);
+    const choices = q.c.map((c, i) => {
+      let cls = "quiz-choice";
+      if (res) {
+        if (i === correctIdx) cls += " correct";
+        else if (res.r === "x" && i === res.c) cls += " wrong";
+      }
+      return `<button class="${cls}" data-quiz="${qid}" data-ci="${i}">${"ABCD"[i]}. ${escapeHtml(c)}</button>`;
+    }).join("");
+    const badge = res ? (res.r === "o" ? '<span class="quiz-badge ok">正解</span>' : '<span class="quiz-badge ng">不正解</span>') : "";
+    return `<div class="quiz-q">
+      <div class="quiz-qtext">Q${escapeHtml(q.n)}. ${escapeHtml(q.q)}${badge}</div>
+      <div class="quiz-choices">${choices}</div>
+      <div class="quiz-exp${res?"":" hidden"}">正解: ${escapeHtml(q.a)}　${escapeHtml(q.e)}</div>
+    </div>`;
+  }).join("");
+}
+
+function renderStudy() {
+  const v = document.getElementById("view-study");
+  if (typeof STUDY_DATA === "undefined") {
+    v.innerHTML = '<div class="empty-msg">教材データ(study_data.js)が読み込めませんでした。GitHubに study_data.js もアップロードしてください。</div>';
+    return;
+  }
+  const qs = quizStats();
+  let html = `<div class="stat-card">
+    <h3>教材・確認テスト</h3>
+    <div class="hint">節をタップで展開。キーワード・用語・要点を確認し、確認テストで4択演習できます（オフライン対応・第3〜5章はキーワードのみ）。</div>
+    <div style="margin-top:8px">
+      <div class="kv-row"><span>確認テスト 解答済み</span><span class="v">${qs.ans} / ${qs.total}</span></div>
+      <div class="kv-row"><span>正答 / 間違い</span><span class="v">${qs.correct} / ${qs.wrong}</span></div>
+    </div>
+  </div>`;
+  let curChap = "";
+  Object.keys(STUDY_DATA).sort().forEach(sec => {
+    const chap = sec.split("-")[0];
+    if (chap !== curChap) { curChap = chap; html += `<div class="study-chap">第${chap}章</div>`; }
+    const d = STUDY_DATA[sec];
+    const open = !!state.studyOpen[sec];
+    const qn = (d.quiz || []).length, tn = (d.terms || []).length;
+    html += `<div class="study-sec${open?" open":""}">
+      <div class="study-sec-head" data-studytoggle="${sec}">
+        <span class="study-sec-title"><b>${sec}</b> ${escapeHtml(d.title)}</span>
+        <span class="study-sec-meta">用語${tn}・問題${qn}<span class="toggle-arrow"> ▶</span></span>
+      </div>
+      <div class="study-sec-body">
+        ${d.keywords ? `<div class="study-sub-title">キーワード</div><pre class="study-kw">${escapeHtml(d.keywords)}</pre>` : ""}
+        ${tn ? `<div class="study-sub-title">用語解説</div>${d.terms.map(t=>`<div class="term-row"><div class="term-t">${escapeHtml(t.t)}</div><div class="term-m">${escapeHtml(t.m)}</div></div>`).join("")}` : ""}
+        ${(d.points&&d.points.length) ? `<div class="study-sub-title">要点</div>${d.points.map(p=>`<div class="point-row"><span class="point-i">${escapeHtml((p.c?p.c+"／":"")+p.i)}</span><span class="point-x">${escapeHtml(p.x)}</span></div>`).join("")}` : ""}
+        ${qn ? `<div class="study-sub-title">確認テスト（${qn}問）</div>${quizHtml(sec, d.quiz)}` : `<div class="hint" style="margin-top:8px">※この節は確認テスト・用語解説が未整備です（キーワードのみ）。</div>`}
+      </div>
+    </div>`;
+  });
+  v.innerHTML = html;
+  bindStudyEvents();
+}
+
+function bindStudyEvents() {
+  document.querySelectorAll("[data-studytoggle]").forEach(el => {
+    el.addEventListener("click", () => {
+      const sec = el.getAttribute("data-studytoggle");
+      state.studyOpen[sec] = !state.studyOpen[sec];
+      el.closest(".study-sec").classList.toggle("open");
+      saveState();
+    });
+  });
+  document.querySelectorAll("#view-study .quiz-choice").forEach(el => {
+    el.addEventListener("click", () => {
+      const qid = el.getAttribute("data-quiz");
+      const ci = parseInt(el.getAttribute("data-ci"), 10);
+      const sec = qid.split("#")[0], n = qid.split("#")[1];
+      const q = (STUDY_DATA[sec].quiz || []).find(x => x.n === n);
+      if (!q) return;
+      const correctIdx = "ABCD".indexOf(q.a);
+      const ok = ci === correctIdx;
+      state.quiz[qid] = { r: ok ? "o" : "x", c: ci };
+      saveState();
+      const block = el.closest(".quiz-q");
+      block.querySelectorAll(".quiz-choice").forEach((b, i) => {
+        b.classList.remove("correct", "wrong");
+        if (i === correctIdx) b.classList.add("correct");
+        if (i === ci && !ok) b.classList.add("wrong");
+      });
+      const exp = block.querySelector(".quiz-exp");
+      if (exp) exp.classList.remove("hidden");
+      let badge = block.querySelector(".quiz-badge");
+      if (!badge) { badge = document.createElement("span"); block.querySelector(".quiz-qtext").appendChild(badge); }
+      badge.textContent = ok ? "正解" : "不正解";
+      badge.className = "quiz-badge " + (ok ? "ok" : "ng");
+      const card = document.querySelector("#view-study .stat-card");
+      if (card) {
+        const rows = card.querySelectorAll(".kv-row .v");
+        const s = quizStats();
+        if (rows[0]) rows[0].textContent = s.ans + " / " + s.total;
+        if (rows[1]) rows[1].textContent = s.correct + " / " + s.wrong;
+      }
+    });
+  });
+}
+
 // ===== Stats view =====
 function renderStats() {
   const v = document.getElementById("view-stats");
@@ -1351,7 +1518,7 @@ function renderSettings() {
   document.getElementById("file-import").addEventListener("change", importData);
   document.getElementById("btn-reset").addEventListener("click", () => {
     if (confirm("本当にすべての記録をリセットしますか？")) {
-      state = { checks:{}, actualHours:{}, gapQuestions:{}, notes:{}, examScores:{}, openDates:{}, deckDone:{}, deckDoneByDate:{}, dayDecks:{}, lastBackup:0, decksSeeded:false };
+      state = { checks:{}, actualHours:{}, gapQuestions:{}, notes:{}, examScores:{}, openDates:{}, deckDone:{}, deckDoneByDate:{}, dayDecks:{}, lastBackup:0, decksSeeded:false, quiz:{}, studyOpen:{} };
       saveState();
       seedDefaultDecks();
       renderAll();
@@ -1404,7 +1571,7 @@ function importData(e) {
   reader.onload = ev => {
     try {
       const data = JSON.parse(ev.target.result);
-      state = Object.assign({ checks:{}, actualHours:{}, gapQuestions:{}, notes:{}, examScores:{}, openDates:{}, deckDone:{}, deckDoneByDate:{}, dayDecks:{}, lastBackup:0, decksSeeded:false }, data);
+      state = Object.assign({ checks:{}, actualHours:{}, gapQuestions:{}, notes:{}, examScores:{}, openDates:{}, deckDone:{}, deckDoneByDate:{}, dayDecks:{}, lastBackup:0, decksSeeded:false, quiz:{}, studyOpen:{} }, data);
       saveState();
       seedDefaultDecks();
       renderAll();
@@ -1430,6 +1597,7 @@ function showToast(msg) {
 function switchView(name) {
   document.querySelectorAll(".tab").forEach(t => t.classList.toggle("active", t.getAttribute("data-view") === name));
   document.querySelectorAll(".view").forEach(v => v.classList.toggle("active", v.id === "view-" + name));
+  if (name === "study") renderStudy();
   if (name === "decks") renderDecks();
   if (name === "stats") renderStats();
   if (name === "exam") renderExam();
