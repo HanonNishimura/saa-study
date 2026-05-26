@@ -365,6 +365,12 @@ main { padding: 12px 12px 20px; }
   accent-color: var(--accent); cursor: pointer;
 }
 .deck-assign-name { flex: 1; font-size: 13px; line-height: 1.4; color: var(--text); }
+.deck-sec-badge {
+  display: inline-block; font-size: 10px; font-weight: 700;
+  color: var(--accent); background: var(--accent-soft);
+  border: 1px solid var(--accent); border-radius: 4px;
+  padding: 0 5px; margin-right: 6px; vertical-align: middle;
+}
 .deck-assign-row.done .deck-assign-name { text-decoration: line-through; color: var(--muted); }
 .deck-remove {
   flex-shrink: 0; width: 26px; height: 26px;
@@ -388,6 +394,25 @@ main { padding: 12px 12px 20px; }
 .deck-prio-high { background: rgba(239,83,80,0.18); color: #ff8a80; }
 .deck-prio-mid  { background: rgba(255,183,77,0.18); color: #ffb74d; }
 .deck-prio-low  { background: rgba(139,150,168,0.18); color: var(--muted); }
+
+/* デッキ実施回数（5段階ピップ） */
+.deck-pip-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px; margin-bottom: 4px;
+  background: rgba(0,0,0,0.2); border-radius: 8px;
+}
+.deck-pip-row .deck-name { flex: 1; font-size: 13px; color: var(--text); line-height: 1.3; }
+.deck-pips { display: flex; gap: 4px; flex-shrink: 0; }
+.pip {
+  width: 14px; height: 14px; border-radius: 50%;
+  border: 1.5px solid var(--border); background: transparent;
+}
+.pip.on { background: var(--accent); border-color: var(--accent); }
+.deck-rep-count {
+  flex-shrink: 0; font-size: 11px; color: var(--muted);
+  min-width: 28px; text-align: right;
+}
+.deck-pip-row.started .deck-rep-count { color: var(--accent); font-weight: 700; }
 
 /* ===== Update banner ===== */
 .update-banner {
@@ -706,6 +731,43 @@ const DECK_GROUPS = [
 const DECK_BY_ID = {};
 DECK_GROUPS.forEach(g => g.decks.forEach(d => { DECK_BY_ID[d.id] = d; }));
 
+// ===== 参考書の各節（◎=最優先デッキ）を、対応する日付に初期投入 =====
+// {sec: 節番号, id: デッキID}。sec は日付カードでバッジ表示して対応章を示す。
+const DEFAULT_DAY_DECKS = {
+  "5/20": [
+    {sec:"1-1", id:"dk_war_ops"}, {sec:"1-1", id:"dk_war_sec"}, {sec:"1-1", id:"dk_war_rel"},
+    {sec:"1-1", id:"dk_war_perf"}, {sec:"1-1", id:"dk_war_cost"}, {sec:"1-1", id:"dk_war_overview"},
+    {sec:"1-2", id:"dk_vpc"}, {sec:"1-2", id:"dk_route53"}, {sec:"1-2", id:"dk_cf_ga"}, {sec:"1-2", id:"dk_dx_vpn"}
+  ],
+  "5/22": [ {sec:"1-3", id:"dk_iam_org"} ],
+  "5/23": [ {sec:"1-4", id:"dk_ec2"}, {sec:"1-5", id:"dk_s3"} ],
+  "5/25": [ {sec:"1-6", id:"dk_rds_aurora"} ],
+  "5/26": [ {sec:"2-1", id:"dk_war_overview"}, {sec:"2-1", id:"dk_war_sec"}, {sec:"2-2", id:"dk_iam_org"} ],
+  "5/27": [ {sec:"3-1", id:"dk_war_rel"}, {sec:"3-2", id:"dk_route53"}, {sec:"3-3", id:"dk_elb_as"} ],
+  "5/29": [ {sec:"3-5", id:"dk_rds_aurora"}, {sec:"4-1", id:"dk_war_perf"} ],
+  "5/30": [ {sec:"5-1", id:"dk_war_cost"} ]
+};
+// date -> { deckId: 節番号 }（バッジ表示用の逆引き）
+const DECK_SEC_BY_DATE = {};
+for (const dt in DEFAULT_DAY_DECKS) {
+  DECK_SEC_BY_DATE[dt] = {};
+  DEFAULT_DAY_DECKS[dt].forEach(x => { DECK_SEC_BY_DATE[dt][x.id] = x.sec; });
+}
+// 初回のみ：◎デッキを各日付の「優先度 高」に投入（既存の割り当ては保持してマージ）
+function seedDefaultDecks() {
+  if (state.decksSeeded) return;
+  for (const dt in DEFAULT_DAY_DECKS) {
+    const b = getDayDeckBuckets(dt) || { high:[], mid:[], low:[] };
+    const all = [].concat(b.high||[], b.mid||[], b.low||[]);
+    DEFAULT_DAY_DECKS[dt].forEach(x => {
+      if (!all.includes(x.id)) { b.high.push(x.id); all.push(x.id); }
+    });
+    state.dayDecks[dt] = b;
+  }
+  state.decksSeeded = true;
+  saveState();
+}
+
 // 「デッキを追加」セレクトのオプション（指定日に割当済みは無効化）
 function deckOptionsHtml(excludeIds) {
   excludeIds = excludeIds || [];
@@ -747,10 +809,11 @@ function dayDeckSectionHtml(date) {
     (buckets[p.key] || []).forEach(id => {
       const deck = DECK_BY_ID[id];
       if (!deck) return;
-      const done = !!state.deckDone[id];
+      const done = !!(state.deckDoneByDate[date] && state.deckDoneByDate[date][id]);
+      const secLbl = (DECK_SEC_BY_DATE[date] && DECK_SEC_BY_DATE[date][id]) || "";
       html += `<div class="deck-assign-row${done?" done":""}" data-dassign="${date}|${id}">
         <input type="checkbox" ${done?"checked":""}>
-        <span class="deck-assign-name">${escapeHtml(deck.name)}</span>
+        <span class="deck-assign-name">${secLbl?`<span class="deck-sec-badge">${secLbl}</span>`:""}${escapeHtml(deck.name)}</span>
         <button class="deck-remove" data-dremove="${date}|${p.key}|${id}" title="このデッキを外す">×</button>
       </div>`;
     });
@@ -805,11 +868,14 @@ function bindDeckControls(root) {
       if (e.target.closest(".deck-remove")) return;
       e.preventDefault();
       const parts = el.getAttribute("data-dassign").split("|");
-      const id = parts[1];
-      state.deckDone[id] = !state.deckDone[id];
+      const date = parts[0], id = parts[1];
+      if (!state.deckDoneByDate[date]) state.deckDoneByDate[date] = {};
+      const now = !state.deckDoneByDate[date][id];
+      if (now) state.deckDoneByDate[date][id] = true;
+      else delete state.deckDoneByDate[date][id];
       const cb = el.querySelector('input[type="checkbox"]');
-      cb.checked = state.deckDone[id];
-      el.classList.toggle("done", state.deckDone[id]);
+      cb.checked = now;
+      el.classList.toggle("done", now);
       saveState();
     });
   });
@@ -826,9 +892,11 @@ let state = {
   notes: {},        // date -> string
   examScores: {},   // examId -> number
   openDates: {},    // date -> bool
-  deckDone: {},     // deckId -> bool (実施したデッキ)
+  deckDone: {},        // (旧) deckId -> bool ※後方互換のため保持・未使用
+  deckDoneByDate: {},  // date -> { deckId: true } 日付ごとの実施チェック（独立）
   dayDecks: {},     // date -> [deckId, ...] (その日に割り当てたデッキ)
-  lastBackup: 0     // 最終エクスポート時刻(epoch ms)
+  lastBackup: 0,    // 最終エクスポート時刻(epoch ms)
+  decksSeeded: false // ◎デッキの初期投入済みフラグ
 };
 
 function loadState() {
@@ -1062,11 +1130,19 @@ function bindScheduleEvents() {
 }
 
 // ===== Decks view =====
+// あるデッキを「実施した日数」(=回数) を数える
+function deckRepCount(id) {
+  let n = 0;
+  for (const date in state.deckDoneByDate) {
+    if (state.deckDoneByDate[date] && state.deckDoneByDate[date][id]) n++;
+  }
+  return n;
+}
 function deckStats() {
   let total = 0, done = 0;
   DECK_GROUPS.forEach(g => g.decks.forEach(d => {
     total++;
-    if (state.deckDone[d.id]) done++;
+    if (deckRepCount(d.id) > 0) done++;
   }));
   return { total, done };
 }
@@ -1076,30 +1152,33 @@ function renderDecks() {
   const ds = deckStats();
   const pct = ds.total ? Math.round(ds.done / ds.total * 100) : 0;
 
-  // --- Section 1: 実施チェック ---
-  let doneHtml = "";
+  // --- 実施回数（5段階ピップ）一覧 ---
+  let listHtml = "";
   DECK_GROUPS.forEach(g => {
-    doneHtml += `<div class="deck-cat">${escapeHtml(g.cat)}</div>`;
+    listHtml += `<div class="deck-cat">${escapeHtml(g.cat)}</div>`;
     g.decks.forEach(d => {
-      const checked = !!state.deckDone[d.id];
-      doneHtml += `<label class="task deck-row${checked?" done":""}" data-deck="${d.id}">
-        <input type="checkbox" ${checked?"checked":""}>
-        <span class="task-label">${escapeHtml(d.name)}</span>
-      </label>`;
+      const reps = deckRepCount(d.id);
+      const shown = Math.min(reps, 5);
+      let pips = "";
+      for (let i = 1; i <= 5; i++) pips += `<span class="pip${i<=shown?" on":""}"></span>`;
+      listHtml += `<div class="deck-pip-row${reps>0?" started":""}">
+        <span class="deck-name">${escapeHtml(d.name)}</span>
+        <span class="deck-pips">${pips}</span>
+        <span class="deck-rep-count">${reps}/5</span>
+      </div>`;
     });
   });
 
   v.innerHTML = `
-    <div class="stat-card" id="deck-done-card">
-      <h3>デッキ実施チェック（全体一覧）</h3>
-      <div class="big-num" id="deck-done-num">${ds.done}<span class="unit"> / ${ds.total} デッキ</span></div>
-      <div class="progress-bar" style="margin-top:10px"><div class="progress-fill" id="deck-done-fill" style="width:${pct}%"></div></div>
-      <div class="progress-text" id="deck-done-text">完了 ${pct}%</div>
-      <div class="hint">学習し終えたデッキにチェック（タップでON/OFF）。スケジュールの各日付に割り当てたデッキのチェックともここで連動します。</div>
-      ${doneHtml}
+    <div class="stat-card">
+      <h3>デッキ実施回数（最大5回）</h3>
+      <div class="big-num">${ds.done}<span class="unit"> / ${ds.total} デッキ着手</span></div>
+      <div class="progress-bar" style="margin-top:10px"><div class="progress-fill" style="width:${pct}%"></div></div>
+      <div class="progress-text">1回以上やったデッキ ${pct}%</div>
+      <div class="hint">●は実施した日数（最大5）。各日付カードのデッキ欄でチェックした「日数」を自動集計しています（この一覧は表示専用・日付カードのチェックとは別管理）。</div>
+      ${listHtml}
     </div>
   `;
-  bindDeckEvents();
 }
 
 function updateDeckProgress() {
@@ -1272,8 +1351,9 @@ function renderSettings() {
   document.getElementById("file-import").addEventListener("change", importData);
   document.getElementById("btn-reset").addEventListener("click", () => {
     if (confirm("本当にすべての記録をリセットしますか？")) {
-      state = { checks:{}, actualHours:{}, gapQuestions:{}, notes:{}, examScores:{}, openDates:{}, deckDone:{}, dayDecks:{}, lastBackup:0 };
+      state = { checks:{}, actualHours:{}, gapQuestions:{}, notes:{}, examScores:{}, openDates:{}, deckDone:{}, deckDoneByDate:{}, dayDecks:{}, lastBackup:0, decksSeeded:false };
       saveState();
+      seedDefaultDecks();
       renderAll();
       showToast("リセットしました");
     }
@@ -1303,7 +1383,7 @@ function daysSinceBackup() {
 function hasAnyData() {
   return Object.keys(state.checks).length || Object.keys(state.actualHours).length ||
          Object.keys(state.gapQuestions).length || Object.keys(state.examScores).length ||
-         Object.keys(state.deckDone).length;
+         Object.keys(state.deckDone).length || Object.keys(state.deckDoneByDate).length;
 }
 function backupOverdue() {
   if (!hasAnyData()) return false;
@@ -1324,8 +1404,9 @@ function importData(e) {
   reader.onload = ev => {
     try {
       const data = JSON.parse(ev.target.result);
-      state = Object.assign({ checks:{}, actualHours:{}, gapQuestions:{}, notes:{}, examScores:{}, openDates:{}, deckDone:{}, dayDecks:{}, lastBackup:0 }, data);
+      state = Object.assign({ checks:{}, actualHours:{}, gapQuestions:{}, notes:{}, examScores:{}, openDates:{}, deckDone:{}, deckDoneByDate:{}, dayDecks:{}, lastBackup:0, decksSeeded:false }, data);
       saveState();
+      seedDefaultDecks();
       renderAll();
       showToast("インポートしました");
     } catch(err) { showToast("ファイルが不正です"); }
@@ -1384,6 +1465,7 @@ document.querySelectorAll(".tab").forEach(t => {
 document.getElementById("today-btn").addEventListener("click", scrollToToday);
 
 loadState();
+seedDefaultDecks();
 renderAll();
 
 // auto-scroll to today on first load

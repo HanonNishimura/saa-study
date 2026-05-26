@@ -1,5 +1,5 @@
 // Service Worker for SAA Study App
-const CACHE_VERSION = "saa-v1.0.7";
+const CACHE_VERSION = "saa-v1.0.9";
 const ASSETS = [
   "./",
   "./index.html",
