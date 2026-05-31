@@ -563,6 +563,35 @@ main { padding: 12px 12px 20px; }
 .browse-desc { font-size: 12px; color: var(--muted); margin-top: 2px; }
 .browse-cat  { font-size: 10px; color: var(--border); margin-top: 4px; }
 
+/* 図解虫食いクイズ */
+.diag-quiz-card { padding: 12px; }
+.diag-sec-label { font-size: 10px; color: var(--muted); margin-bottom: 4px; }
+.diag-title { font-size: 15px; font-weight: 700; color: var(--warn); margin-bottom: 4px; }
+.diag-desc  { font-size: 12px; color: var(--muted); margin-bottom: 10px; }
+.diag-quiz-body .blank,
+.diag-blank {
+  display: inline-block;
+  background: rgba(255,183,77,0.12) !important;
+  border: 2px dashed var(--warn) !important;
+  color: var(--warn) !important;
+  border-radius: 6px; padding: 2px 14px;
+  font-weight: 700; font-size: 13px; cursor: default;
+  min-width: 60px; text-align: center;
+  transition: background 0.3s, border-color 0.3s, color 0.3s;
+}
+.diag-legend-blank {
+  display: inline-block;
+  background: rgba(255,183,77,0.12);
+  border: 2px dashed var(--warn);
+  border-radius: 6px; padding: 2px 10px;
+  color: var(--warn); font-weight: 700;
+  cursor: default;
+}
+.diag-nav-row {
+  display: flex; justify-content: space-between; gap: 8px; margin-top: 8px;
+}
+.diag-nav-row .btn { flex: 1; padding: 12px; }
+
 /* ===== Update banner ===== */
 .update-banner {
   position: fixed; left: 12px; right: 12px;
@@ -1636,8 +1665,9 @@ function renderFlash() {
       </div>
       <div class="flash-action-row">
         <button class="btn" id="fBrowseBtn">📖 閲覧</button>
-        <button class="btn primary" id="fStartBtn">▶ クイズ開始</button>
+        <button class="btn primary" id="fStartBtn">▶ クイズ</button>
       </div>
+      <button class="btn" id="fDiagBtn" style="width:100%;margin-top:8px;padding:12px;font-size:14px;font-weight:700;border-color:var(--warn);color:var(--warn)">📝 図解 虫食いクイズ</button>
     </div>
     ${sessHtml}
   `;
@@ -1664,6 +1694,13 @@ function renderFlash() {
     window._fUseDiagram = document.getElementById("fUseDiagram").checked;
     renderFlashBrowse();
   });
+  // イベント: 図解虫食いクイズ
+  document.getElementById("fDiagBtn").addEventListener("click", () => {
+    const secs = window._fSelSecs.slice();
+    const diagCards = DIAGRAM_CARDS.filter(d => secs.includes(d.sec));
+    if (!diagCards.length) { showToast("選択した範囲に図解カードがありません"); return; }
+    renderFlashDiagramQuiz(diagCards, 0);
+  });
   // イベント: クイズ開始
   document.getElementById("fStartBtn").addEventListener("click", () => {
     window._fUseVocab   = document.getElementById("fUseVocab").checked;
@@ -1678,6 +1715,105 @@ function renderFlash() {
     settings.count = cards.length; settings.label = `${cards.length}問`;
     _fSession = { active:true, cards, idx:0, results:[], settings, date:getToday() };
     renderFlashCard();
+  });
+}
+
+// ─── 図解 虫食いクイズ ───
+function renderFlashDiagramQuiz(cards, idx) {
+  const v = document.getElementById("view-flash");
+  const card = cards[idx];
+  const total = cards.length;
+  const pct = Math.round(idx / total * 100);
+
+  // 図のHTMLからblankスパンの中身を「？」に置き換えてクイズ用に変換
+  function toQuizHtml(html) {
+    return html.replace(
+      /<span class="blank" data-answer="([^"]*)">[^<]*<\/span>/g,
+      (_, ans) => `<span class="blank diag-blank" data-answer="${escapeHtml(ans)}">&nbsp;&nbsp;？&nbsp;&nbsp;</span>`
+    ).replace(
+      // dc-blank-legend の <b data-answer="..."> も隠す
+      /<b data-answer="([^"]*)">\[\?\]<\/b>/g,
+      (_, ans) => `<b data-answer="${escapeHtml(ans)}" class="diag-legend-blank">[？]</b>`
+    );
+  }
+
+  const quizHtml = toQuizHtml(card.html);
+
+  v.innerHTML = `
+    <div class="flash-header">
+      <button class="btn" id="dqBackBtn">← 戻る</button>
+      <div class="flash-progress">${idx+1} / ${total}</div>
+      <div style="font-size:11px;color:var(--warn);font-weight:700">図解 虫食い</div>
+    </div>
+    <div class="progress-bar" style="margin:6px 0 10px"><div class="progress-fill" style="width:${pct}%;background:var(--warn)"></div></div>
+    <div class="stat-card diag-quiz-card">
+      <div class="diag-sec-label">${card.sec} ${escapeHtml(card.secTitle)}</div>
+      <div class="diag-title">${escapeHtml(card.title)}</div>
+      <div class="diag-desc">${escapeHtml(card.back)}</div>
+      <div class="flash-diagram-body diag-quiz-body">${quizHtml}</div>
+      <div id="dqInputs" class="flash-blank-inputs"></div>
+    </div>
+    <div id="dqActionRow" class="flash-answer-row">
+      <button class="btn flash-check" id="dqCheckBtn" style="background:var(--warn);border-color:var(--warn)">答え合わせ</button>
+    </div>
+    <div class="diag-nav-row">
+      ${idx>0 ? `<button class="btn" id="dqPrevBtn">← 前の図</button>` : "<div></div>"}
+      ${idx<total-1 ? `<button class="btn" id="dqNextBtn">次の図 →</button>` : '<button class="btn" id="dqFinBtn" style="color:var(--ok)">✓ 完了</button>'}
+    </div>
+  `;
+
+  // 入力欄を生成
+  const inputsEl = document.getElementById("dqInputs");
+  let inputsHtml = "";
+  card.blanks.forEach((b, i) => {
+    inputsHtml += `
+      <div class="flash-blank-row">
+        <span class="flash-blank-num">${i+1}</span>
+        <input class="flash-blank-input" id="dqi_${b.id}" placeholder="答えを入力..." autocomplete="off" inputmode="text">
+        <span class="flash-blank-hint hidden" id="dqh_${b.id}"></span>
+      </div>`;
+  });
+  inputsEl.innerHTML = inputsHtml;
+
+  // 答え合わせ
+  document.getElementById("dqCheckBtn").addEventListener("click", () => {
+    const normalize = s => s.replace(/\s/g,"").replace(/[Ａ-Ｚａ-ｚ０-９]/g,c=>String.fromCharCode(c.charCodeAt(0)-0xFEE0)).toLowerCase();
+    let allOk = true;
+    card.blanks.forEach((b, i) => {
+      const inp = document.getElementById("dqi_"+b.id);
+      const hint = document.getElementById("dqh_"+b.id);
+      const val = (inp.value||"").trim();
+      const ok = normalize(val) === normalize(b.answer)
+        || (normalize(b.answer).includes(normalize(val)) && normalize(val).length >= 2);
+      inp.style.borderColor = ok ? "var(--ok)" : "var(--bad)";
+      hint.textContent = `正解: ${b.answer}`;
+      hint.classList.remove("hidden");
+      hint.style.color = ok ? "var(--ok)" : "var(--bad)";
+      if (!ok) allOk = false;
+      // 図の中のblankも色付け
+      const blankEls = v.querySelectorAll(".diag-blank");
+      if (blankEls[i]) {
+        blankEls[i].textContent = b.answer;
+        blankEls[i].style.background = ok ? "rgba(76,175,80,0.25)" : "rgba(239,83,80,0.25)";
+        blankEls[i].style.borderColor = ok ? "var(--ok)" : "var(--bad)";
+        blankEls[i].style.color = ok ? "var(--ok)" : "var(--bad)";
+      }
+    });
+    // ボタンを次へ変更
+    document.getElementById("dqActionRow").innerHTML = `
+      <span style="font-size:13px;color:${allOk?"var(--ok)":"var(--bad)"};font-weight:700">
+        ${allOk ? "✓ 全問正解！" : "✗ 不正解あり"}
+      </span>
+    `;
+    showToast(allOk ? "全問正解！" : "答えを確認してください");
+  });
+
+  document.getElementById("dqBackBtn").addEventListener("click", () => renderFlash());
+  document.getElementById("dqPrevBtn")?.addEventListener("click", () => renderFlashDiagramQuiz(cards, idx-1));
+  document.getElementById("dqNextBtn")?.addEventListener("click", () => renderFlashDiagramQuiz(cards, idx+1));
+  document.getElementById("dqFinBtn")?.addEventListener("click", () => {
+    showToast("図解虫食いクイズ完了！");
+    renderFlash();
   });
 }
 
