@@ -523,6 +523,45 @@ main { padding: 12px 12px 20px; }
 .flash-blank-hint { font-size: 11px; flex-shrink: 0; max-width: 100px; }
 .pulse { animation: pulse 0.5s ease 2; }
 @keyframes pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.05)} }
+/* 節ボタン内の枚数バッジ */
+.sec-count {
+  font-size: 9px; font-weight: 600;
+  color: var(--muted); margin-left: 3px;
+  display: inline-block; vertical-align: middle;
+}
+.sec-toggle-btn.active .sec-count { color: rgba(255,255,255,0.75); }
+.sec-sel-total { font-size: 12px; color: var(--muted); margin-top: 8px; }
+.sec-sel-total b { color: var(--accent); }
+/* 出題方向ボタン */
+.dir-btns { display: flex; gap: 6px; flex-wrap: wrap; }
+.dir-btn {
+  padding: 7px 12px; border-radius: 8px; font-size: 12px; font-weight: 600;
+  background: var(--surface2); color: var(--muted);
+  border: 1px solid var(--border); cursor: pointer;
+}
+.dir-btn.active { background: var(--surface2); color: var(--accent); border-color: var(--accent); }
+.dir-badge {
+  display: inline-block; font-size: 9px; font-weight: 700;
+  background: var(--accent-soft); color: var(--accent);
+  border: 1px solid var(--accent); border-radius: 4px; padding: 1px 5px;
+}
+.dir-badge.rev { background: rgba(206,147,216,0.15); color: #ce93d8; border-color: #ce93d8; }
+/* 開始/閲覧ボタン行 */
+.flash-action-row { display: flex; gap: 8px; margin-top: 14px; }
+.flash-action-row .btn { flex: 1; padding: 13px; font-size: 14px; text-align: center; }
+/* 閲覧モード */
+.browse-sec-head {
+  font-size: 12px; font-weight: 700; color: var(--accent);
+  margin: 14px 2px 6px; display: flex; align-items: center; gap: 6px;
+}
+.browse-card {
+  background: var(--surface); border-radius: 10px; padding: 12px;
+  margin-bottom: 8px; border-left: 3px solid var(--accent);
+}
+.browse-term { font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+.browse-def  { font-size: 12.5px; color: var(--muted); line-height: 1.6; }
+.browse-desc { font-size: 12px; color: var(--muted); margin-top: 2px; }
+.browse-cat  { font-size: 10px; color: var(--border); margin-top: 4px; }
 
 /* ===== Update banner ===== */
 .update-banner {
@@ -1458,15 +1497,27 @@ const ALL_SECS = ["1-1","1-2","1-3","1-4","1-5","1-6","1-7","1-8","1-9","2-1","2
 
 function flashAvailable() { return typeof VOCAB_CARDS !== "undefined" && typeof DIAGRAM_CARDS !== "undefined"; }
 
+// 節ごとのカード枚数を返す { vocab: n, diagram: n }
+function secCardCounts(sec) {
+  const v = (VOCAB_CARDS[sec] && VOCAB_CARDS[sec].cards) ? VOCAB_CARDS[sec].cards.length : 0;
+  const d = DIAGRAM_CARDS.filter(x => x.sec === sec).length;
+  return { vocab: v, diagram: d };
+}
+
 // 設定に合わせてカードを生成
 function buildFlashCards(settings) {
-  const { secs, useVocab, useDiagram, count } = settings;
+  const { secs, useVocab, useDiagram, count, direction } = settings;
   let cards = [];
   if (useVocab) {
     secs.forEach(sec => {
       const grp = VOCAB_CARDS[sec]; if (!grp) return;
       grp.cards.forEach(c => {
-        cards.push({ type:"vocab", id:c.id, sec, front:c.term, back:c.def, cat:c.cat });
+        // direction: "normal"=用語→意味, "reverse"=意味→用語, "random"=ランダム
+        const rev = direction === "reverse" || (direction === "random" && Math.random() < 0.5);
+        cards.push({ type:"vocab", id:c.id, sec, cat:c.cat,
+          front: rev ? c.def  : c.term,
+          back:  rev ? c.term : c.def,
+          reversed: rev });
       });
     });
   }
@@ -1509,49 +1560,73 @@ function renderFlash() {
   const lastSess = sessions.length ? sessions[sessions.length-1] : null;
 
   // セクション選択状態（セッション外で保持）
-  if (!window._fSelSecs) window._fSelSecs = ALL_SECS.slice();
-  if (!window._fUseVocab) window._fUseVocab = true;
-  if (!window._fUseDiagram) window._fUseDiagram = true;
-  if (!window._fCount) window._fCount = 20;
-  if (!window._fGoal) window._fGoal = parseInt(state.flashGoals.default||"80",10);
+  if (!window._fSelSecs)     window._fSelSecs     = ALL_SECS.slice();
+  if (window._fUseVocab   === undefined) window._fUseVocab   = true;
+  if (window._fUseDiagram === undefined) window._fUseDiagram = true;
+  if (!window._fCount)    window._fCount    = 20;
+  if (!window._fGoal)     window._fGoal     = parseInt(state.flashGoals.default||"80",10);
+  if (!window._fDir)      window._fDir      = "normal"; // "normal"|"reverse"|"random"
 
+  // 節ボタン（枚数バッジ付き）
   let secHtml = ALL_SECS.map(s => {
     const sel = window._fSelSecs.includes(s);
-    return `<button class="sec-toggle-btn${sel?" active":""}" data-sec="${s}">${s}</button>`;
+    const c = secCardCounts(s);
+    const badge = [];
+    if (c.vocab)   badge.push(`V:${c.vocab}`);
+    if (c.diagram) badge.push(`D:${c.diagram}`);
+    const badgeTxt = badge.length ? `<span class="sec-count">${badge.join(" ")}</span>` : "";
+    return `<button class="sec-toggle-btn${sel?" active":""}" data-sec="${s}">${s}${badgeTxt}</button>`;
   }).join("");
+
+  // 全選択合計
+  const selVocab   = window._fSelSecs.reduce((n,s)=>n+secCardCounts(s).vocab,0);
+  const selDiagram = window._fSelSecs.reduce((n,s)=>n+secCardCounts(s).diagram,0);
 
   let sessHtml = "";
   if (sessions.length) {
     sessHtml = `<div class="stat-card"><h3>セッション履歴（直近5件）</h3>`;
-    sessions.slice().reverse().slice(0,5).forEach((s,i) => {
+    sessions.slice().reverse().slice(0,5).forEach(s => {
       const total = s.results.length, ok = s.results.filter(r=>r.ok).length;
       const pct = total ? Math.round(ok/total*100) : 0;
       const goal = s.settings.goal||80;
       const badge = pct>=goal ? '<span class="score-badge pass">達成</span>' : '<span class="score-badge fail">未達</span>';
-      sessHtml += `<div class="kv-row"><span>${s.date} ${s.settings.label||""}</span><span class="v">${ok}/${total} (${pct}%)${badge}</span></div>`;
+      const dirIcon = s.settings.direction==="reverse" ? "🔄" : s.settings.direction==="random" ? "🎲" : "";
+      sessHtml += `<div class="kv-row"><span style="font-size:12px">${s.date} ${dirIcon}${s.settings.label||""}</span><span class="v">${ok}/${total} (${pct}%)${badge}</span></div>`;
     });
     sessHtml += `</div>`;
   }
 
   v.innerHTML = `
     <div class="stat-card">
-      <h3>単語帳クイズ</h3>
-      <div class="kv-row"><span>累計カード実施</span><span class="v">${totalCards}種</span></div>
-      <div class="kv-row"><span>正答率80%超のカード</span><span class="v">${goodCards}種</span></div>
+      <h3>単語帳</h3>
+      <div class="kv-row"><span>累計実施カード</span><span class="v">${totalCards}種</span></div>
+      <div class="kv-row"><span>正答率80%超</span><span class="v">${goodCards}種</span></div>
       <div class="progress-bar" style="margin-top:8px"><div class="progress-fill" style="width:${totalCards?Math.round(goodCards/totalCards*100):0}%"></div></div>
     </div>
     <div class="stat-card">
-      <h3>クイズ設定</h3>
-      <div class="section-title" style="margin-bottom:6px">出題範囲（節）</div>
+      <h3>出題範囲（節）</h3>
+      <div class="hint" style="margin-bottom:6px">V=用語枚数　D=図解枚数</div>
       <div class="sec-toggle-wrap">${secHtml}</div>
-      <div class="time-row" style="margin-top:12px">
+      <div class="sec-sel-total">選択中: 用語 <b>${selVocab}</b>枚 / 図解 <b>${selDiagram}</b>枚</div>
+    </div>
+    <div class="stat-card">
+      <h3>設定</h3>
+      <div class="time-row">
         <label>カード種別:</label>
         <label style="display:flex;align-items:center;gap:4px;font-size:13px"><input type="checkbox" id="fUseVocab" ${window._fUseVocab?"checked":""}> 用語</label>
         <label style="display:flex;align-items:center;gap:4px;font-size:13px"><input type="checkbox" id="fUseDiagram" ${window._fUseDiagram?"checked":""}> 図解</label>
       </div>
-      <div class="time-row" style="margin-top:8px">
+      <div class="time-row" style="margin-top:10px">
+        <label>出題方向:</label>
+        <div class="dir-btns">
+          <button class="dir-btn${window._fDir==="normal"?" active":""}" data-dir="normal">用語→意味</button>
+          <button class="dir-btn${window._fDir==="reverse"?" active":""}" data-dir="reverse">意味→用語</button>
+          <button class="dir-btn${window._fDir==="random"?" active":""}" data-dir="random">🎲 ランダム</button>
+        </div>
+      </div>
+      <div class="time-row" style="margin-top:10px">
         <label>問題数:</label>
-        <input type="number" class="time-input" id="fCount" value="${window._fCount}" min="5" max="100" step="5" inputmode="numeric">
+        <input type="number" class="time-input" id="fCount" value="${window._fCount}" min="5" max="500" step="5" inputmode="numeric">
         <span class="time-target">問</span>
       </div>
       <div class="time-row" style="margin-top:8px">
@@ -1559,31 +1634,99 @@ function renderFlash() {
         <input type="number" class="time-input" id="fGoal" value="${window._fGoal}" min="50" max="100" step="5" inputmode="numeric">
         <span class="time-target">%</span>
       </div>
-      <button class="btn primary" id="fStartBtn" style="width:100%;margin-top:14px;padding:14px;font-size:16px">クイズ開始</button>
+      <div class="flash-action-row">
+        <button class="btn" id="fBrowseBtn">📖 閲覧</button>
+        <button class="btn primary" id="fStartBtn">▶ クイズ開始</button>
+      </div>
     </div>
     ${sessHtml}
   `;
 
+  // イベント: 節ボタン
   document.querySelectorAll(".sec-toggle-btn").forEach(btn => {
     btn.addEventListener("click", () => {
       const sec = btn.getAttribute("data-sec");
       const idx = window._fSelSecs.indexOf(sec);
-      if (idx>=0) { window._fSelSecs.splice(idx,1); btn.classList.remove("active"); }
-      else { window._fSelSecs.push(sec); btn.classList.add("active"); }
+      if (idx>=0) window._fSelSecs.splice(idx,1); else window._fSelSecs.push(sec);
+      renderFlash(); // 合計を更新
     });
   });
-  document.getElementById("fStartBtn").addEventListener("click", () => {
-    window._fUseVocab = document.getElementById("fUseVocab").checked;
+  // イベント: 出題方向
+  document.querySelectorAll(".dir-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      window._fDir = btn.getAttribute("data-dir");
+      document.querySelectorAll(".dir-btn").forEach(b => b.classList.toggle("active", b === btn));
+    });
+  });
+  // イベント: 閲覧ボタン
+  document.getElementById("fBrowseBtn").addEventListener("click", () => {
+    window._fUseVocab   = document.getElementById("fUseVocab").checked;
     window._fUseDiagram = document.getElementById("fUseDiagram").checked;
-    window._fCount = parseInt(document.getElementById("fCount").value,10)||20;
-    window._fGoal = parseInt(document.getElementById("fGoal").value,10)||80;
+    renderFlashBrowse();
+  });
+  // イベント: クイズ開始
+  document.getElementById("fStartBtn").addEventListener("click", () => {
+    window._fUseVocab   = document.getElementById("fUseVocab").checked;
+    window._fUseDiagram = document.getElementById("fUseDiagram").checked;
+    window._fCount  = parseInt(document.getElementById("fCount").value,10)||20;
+    window._fGoal   = parseInt(document.getElementById("fGoal").value,10)||80;
     state.flashGoals.default = String(window._fGoal);
     saveState();
-    const cards = buildFlashCards({ secs:window._fSelSecs.slice(), useVocab:window._fUseVocab, useDiagram:window._fUseDiagram, count:window._fCount });
+    const settings = { secs:window._fSelSecs.slice(), useVocab:window._fUseVocab, useDiagram:window._fUseDiagram, count:window._fCount, direction:window._fDir, goal:window._fGoal, label:`${window._fCount}問` };
+    const cards = buildFlashCards(settings);
     if (!cards.length) { showToast("条件を満たすカードがありません"); return; }
-    _fSession = { active:true, cards, idx:0, results:[], settings:{ secs:window._fSelSecs.slice(), useVocab:window._fUseVocab, useDiagram:window._fUseDiagram, count:cards.length, goal:window._fGoal, label:`${cards.length}問` }, date:getToday() };
+    settings.count = cards.length; settings.label = `${cards.length}問`;
+    _fSession = { active:true, cards, idx:0, results:[], settings, date:getToday() };
     renderFlashCard();
   });
+}
+
+// ─── 閲覧モード ───
+function renderFlashBrowse() {
+  const v = document.getElementById("view-flash");
+  const secs = window._fSelSecs.slice();
+
+  let html = `
+    <div class="flash-header" style="margin-bottom:8px">
+      <button class="btn" id="fBrowseBackBtn">← 戻る</button>
+      <div class="flash-progress">閲覧モード</div>
+      <div></div>
+    </div>
+  `;
+
+  if (window._fUseVocab) {
+    secs.forEach(sec => {
+      const grp = VOCAB_CARDS[sec];
+      if (!grp || !grp.cards.length) return;
+      html += `<div class="browse-sec-head">${grp.secTitle} <span class="sec-count">V:${grp.cards.length}</span></div>`;
+      grp.cards.forEach(c => {
+        html += `<div class="browse-card">
+          <div class="browse-term">${escapeHtml(c.term)}</div>
+          <div class="browse-def">${escapeHtml(c.def)}</div>
+          ${c.cat?`<div class="browse-cat">${escapeHtml(c.cat)}</div>`:""}
+        </div>`;
+      });
+    });
+  }
+  if (window._fUseDiagram) {
+    const diagrams = DIAGRAM_CARDS.filter(d => secs.includes(d.sec));
+    if (diagrams.length) {
+      html += `<div class="browse-sec-head">図解カード <span class="sec-count">D:${diagrams.length}</span></div>`;
+      diagrams.forEach(d => {
+        html += `<div class="browse-card">
+          <div class="browse-term">${d.sec} ${escapeHtml(d.title)}</div>
+          <div class="browse-desc">${escapeHtml(d.back)}</div>
+          <div class="flash-diagram-body" style="margin-top:8px">${d.html}</div>
+        </div>`;
+      });
+    }
+  }
+  if (html.includes("browse-card") === false) {
+    html += '<div class="empty-msg">表示するカードがありません</div>';
+  }
+
+  v.innerHTML = html;
+  document.getElementById("fBrowseBackBtn").addEventListener("click", () => renderFlash());
 }
 
 // ─── カード表示画面 ───
@@ -1596,22 +1739,23 @@ function renderFlashCard() {
   const pct = Math.round(idx/cards.length*100);
 
   if (card.type === "vocab") {
+    const dirLabel = card.reversed ? '<span class="dir-badge rev">意味→用語</span>' : '<span class="dir-badge">用語→意味</span>';
     v.innerHTML = `
       <div class="flash-header">
         <button class="btn" id="fQuitBtn">中断</button>
         <div class="flash-progress">${progress}</div>
-        <div style="font-size:11px;color:var(--muted)">${card.sec} 用語</div>
+        <div style="font-size:11px;color:var(--muted)">${card.sec} ${dirLabel}</div>
       </div>
       <div class="progress-bar" style="margin:6px 0 10px"><div class="progress-fill" style="width:${pct}%"></div></div>
       <div class="flash-vocab-card" id="flashCard">
         <div class="flash-face front" id="flashFront">
           <div class="flash-cat">${escapeHtml(card.cat||card.sec)}</div>
-          <div class="flash-term">${escapeHtml(card.front)}</div>
+          <div class="${card.reversed?"flash-def":"flash-term"}">${escapeHtml(card.front)}</div>
           <div class="flash-tap-hint">タップして答えを見る</div>
         </div>
         <div class="flash-face back hidden" id="flashBack">
-          <div class="flash-cat">${escapeHtml(card.front)}</div>
-          <div class="flash-def">${escapeHtml(card.back)}</div>
+          <div class="flash-cat">${escapeHtml(card.reversed?"答え":"用語")}: ${escapeHtml(card.front)}</div>
+          <div class="${card.reversed?"flash-term":"flash-def"}">${escapeHtml(card.back)}</div>
         </div>
       </div>
       <div class="flash-answer-row hidden" id="flashAnswerRow">
