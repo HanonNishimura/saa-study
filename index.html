@@ -591,6 +591,46 @@ main { padding: 12px 12px 20px; }
   display: flex; justify-content: space-between; gap: 8px; margin-top: 8px;
 }
 .diag-nav-row .btn { flex: 1; padding: 12px; }
+/* 虫食い: 隠れている空欄（黄色点線・「？」） */
+.diag-blank-hidden {
+  display: inline-block;
+  background: rgba(255,183,77,0.12);
+  border: 2px dashed var(--warn);
+  color: var(--warn);
+  border-radius: 6px; padding: 2px 14px;
+  font-weight: 700; font-size: 13px;
+  min-width: 60px; text-align: center;
+  transition: background 0.3s, border-color 0.3s, color 0.3s;
+}
+.diag-blank-hidden sub { font-size: 9px; vertical-align: sub; color: var(--muted); }
+/* 虫食い: 表示されている空欄（緑） */
+.diag-blank-shown {
+  display: inline-block;
+  background: rgba(76,175,80,0.12);
+  border: 1px solid var(--ok);
+  color: var(--ok);
+  border-radius: 6px; padding: 2px 10px;
+  font-weight: 600; font-size: 12px;
+}
+.diag-legend-blank {
+  display: inline-block;
+  background: rgba(255,183,77,0.12);
+  border: 2px dashed var(--warn);
+  border-radius: 6px; padding: 2px 10px;
+  color: var(--warn); font-weight: 700;
+}
+.diag-legend-shown {
+  display: inline-block;
+  background: rgba(76,175,80,0.12);
+  border: 1px solid var(--ok);
+  border-radius: 4px; padding: 1px 8px;
+  color: var(--ok); font-weight: 600;
+}
+.diag-mask-info {
+  display: flex; gap: 12px; margin-bottom: 8px; font-size: 11px; font-weight: 600;
+}
+.mask-hidden { color: var(--warn); }
+.mask-shown  { color: var(--ok); }
 
 /* ===== Update banner ===== */
 .update-banner {
@@ -1667,6 +1707,13 @@ function renderFlash() {
         <button class="btn" id="fBrowseBtn">📖 閲覧</button>
         <button class="btn primary" id="fStartBtn">▶ クイズ</button>
       </div>
+      <div class="time-row" style="margin-top:10px;align-items:center">
+        <label style="flex-shrink:0">虫食い率:</label>
+        <input type="range" id="fClozeRange" min="10" max="100" step="10"
+          value="${window._fClozeRate||50}"
+          style="flex:1;accent-color:var(--warn);cursor:pointer">
+        <span id="fClozeVal" style="flex-shrink:0;min-width:36px;text-align:right;font-weight:700;color:var(--warn)">${window._fClozeRate||50}%</span>
+      </div>
       <button class="btn" id="fDiagBtn" style="width:100%;margin-top:8px;padding:12px;font-size:14px;font-weight:700;border-color:var(--warn);color:var(--warn)">📝 図解 虫食いクイズ</button>
     </div>
     ${sessHtml}
@@ -1694,12 +1741,27 @@ function renderFlash() {
     window._fUseDiagram = document.getElementById("fUseDiagram").checked;
     renderFlashBrowse();
   });
+  // イベント: 虫食い率スライダー
+  const clozeRange = document.getElementById("fClozeRange");
+  const clozeVal   = document.getElementById("fClozeVal");
+  if (clozeRange) {
+    clozeRange.addEventListener("input", () => {
+      window._fClozeRate = parseInt(clozeRange.value, 10);
+      clozeVal.textContent = window._fClozeRate + "%";
+    });
+  }
   // イベント: 図解虫食いクイズ
   document.getElementById("fDiagBtn").addEventListener("click", () => {
     const secs = window._fSelSecs.slice();
     const diagCards = DIAGRAM_CARDS.filter(d => secs.includes(d.sec));
     if (!diagCards.length) { showToast("選択した範囲に図解カードがありません"); return; }
-    renderFlashDiagramQuiz(diagCards, 0);
+    // シャッフル
+    const shuffled = diagCards.slice();
+    for (let i = shuffled.length-1; i > 0; i--) {
+      const j = Math.floor(Math.random()*(i+1));
+      [shuffled[i],shuffled[j]] = [shuffled[j],shuffled[i]];
+    }
+    renderFlashDiagramQuiz(shuffled, 0);
   });
   // イベント: クイズ開始
   document.getElementById("fStartBtn").addEventListener("click", () => {
@@ -1724,88 +1786,128 @@ function renderFlashDiagramQuiz(cards, idx) {
   const card = cards[idx];
   const total = cards.length;
   const pct = Math.round(idx / total * 100);
+  const rate = (window._fClozeRate || 50) / 100;
 
-  // 図のHTMLからblankスパンの中身を「？」に置き換えてクイズ用に変換
-  function toQuizHtml(html) {
-    return html.replace(
-      /<span class="blank" data-answer="([^"]*)">[^<]*<\/span>/g,
-      (_, ans) => `<span class="blank diag-blank" data-answer="${escapeHtml(ans)}">&nbsp;&nbsp;？&nbsp;&nbsp;</span>`
-    ).replace(
-      // dc-blank-legend の <b data-answer="..."> も隠す
-      /<b data-answer="([^"]*)">\[\?\]<\/b>/g,
-      (_, ans) => `<b data-answer="${escapeHtml(ans)}" class="diag-legend-blank">[？]</b>`
-    );
+  // ── 各空欄を確率 rate で「隠す」か「見せる」か決定 ──
+  const mask = card.blanks.map(b => ({
+    ...b,
+    hidden: Math.random() < rate
+  }));
+  // 1つも隠れていなければ最低1つ隠す
+  if (mask.length > 0 && !mask.some(m => m.hidden)) {
+    mask[Math.floor(Math.random() * mask.length)].hidden = true;
   }
 
-  const quizHtml = toQuizHtml(card.html);
+  // ── HTMLを変換（空欄スパン単位で hidden/shown を切り替え）──
+  let spanIdx = 0;   // <span class="blank"> の出現順カウンタ
+  let legIdx  = 0;   // dc-blank-legend <b> の出現順カウンタ
+
+  const quizHtml = card.html
+    // テーブル内の <span class="blank" data-answer="...">...</span>
+    .replace(/<span class="blank" data-answer="[^"]*">[^<]*<\/span>/g, () => {
+      const m = mask[spanIdx++];
+      if (!m) return "";
+      if (m.hidden) {
+        // 非表示 → 黄枠「？」+ カウンタ番号
+        return `<span class="blank diag-blank-hidden" data-bid="${escapeHtml(m.id)}">？<sub>${spanIdx}</sub></span>`;
+      } else {
+        // 表示 → 答えが見える（緑っぽい色）
+        return `<span class="blank diag-blank-shown">${escapeHtml(m.answer)}</span>`;
+      }
+    })
+    // dc-blank-legend の <b data-answer="...">[?]</b>
+    .replace(/<b data-answer="[^"]*">\[\?\]<\/b>/g, () => {
+      const m = mask[legIdx++];
+      if (!m) return "";
+      if (m.hidden) {
+        return `<b class="diag-legend-blank" data-bid="${escapeHtml(m.id)}">[？]</b>`;
+      } else {
+        return `<b class="diag-legend-shown">${escapeHtml(m.answer)}</b>`;
+      }
+    });
+
+  const hiddenMasks = mask.filter(m => m.hidden);
+  const shownCount  = mask.length - hiddenMasks.length;
 
   v.innerHTML = `
     <div class="flash-header">
       <button class="btn" id="dqBackBtn">← 戻る</button>
       <div class="flash-progress">${idx+1} / ${total}</div>
-      <div style="font-size:11px;color:var(--warn);font-weight:700">図解 虫食い</div>
+      <div style="font-size:11px;color:var(--warn);font-weight:700">虫食い ${window._fClozeRate||50}%</div>
     </div>
     <div class="progress-bar" style="margin:6px 0 10px"><div class="progress-fill" style="width:${pct}%;background:var(--warn)"></div></div>
     <div class="stat-card diag-quiz-card">
       <div class="diag-sec-label">${card.sec} ${escapeHtml(card.secTitle)}</div>
       <div class="diag-title">${escapeHtml(card.title)}</div>
       <div class="diag-desc">${escapeHtml(card.back)}</div>
+      <div class="diag-mask-info">
+        <span class="mask-hidden">❓ 空欄: ${hiddenMasks.length}個</span>
+        <span class="mask-shown">✓ 表示: ${shownCount}個</span>
+      </div>
       <div class="flash-diagram-body diag-quiz-body">${quizHtml}</div>
+      <hr style="border-color:var(--border);margin:12px 0">
       <div id="dqInputs" class="flash-blank-inputs"></div>
     </div>
     <div id="dqActionRow" class="flash-answer-row">
-      <button class="btn flash-check" id="dqCheckBtn" style="background:var(--warn);border-color:var(--warn)">答え合わせ</button>
+      <button class="btn flash-check" id="dqCheckBtn"
+        style="background:var(--warn);border-color:var(--warn)">
+        答え合わせ（${hiddenMasks.length}問）
+      </button>
     </div>
     <div class="diag-nav-row">
       ${idx>0 ? `<button class="btn" id="dqPrevBtn">← 前の図</button>` : "<div></div>"}
-      ${idx<total-1 ? `<button class="btn" id="dqNextBtn">次の図 →</button>` : '<button class="btn" id="dqFinBtn" style="color:var(--ok)">✓ 完了</button>'}
+      ${idx<total-1 ? `<button class="btn" id="dqNextBtn">次の図 →</button>`
+                    : `<button class="btn" id="dqFinBtn" style="color:var(--ok)">✓ 完了</button>`}
     </div>
   `;
 
-  // 入力欄を生成
+  // ── 入力欄（隠れている空欄のみ）──
   const inputsEl = document.getElementById("dqInputs");
   let inputsHtml = "";
-  card.blanks.forEach((b, i) => {
+  hiddenMasks.forEach((m, i) => {
     inputsHtml += `
       <div class="flash-blank-row">
         <span class="flash-blank-num">${i+1}</span>
-        <input class="flash-blank-input" id="dqi_${b.id}" placeholder="答えを入力..." autocomplete="off" inputmode="text">
-        <span class="flash-blank-hint hidden" id="dqh_${b.id}"></span>
+        <input class="flash-blank-input" id="dqi_${m.id}"
+          placeholder="？ の答えを入力..." autocomplete="off" inputmode="text">
+        <span class="flash-blank-hint hidden" id="dqh_${m.id}"></span>
       </div>`;
   });
-  inputsEl.innerHTML = inputsHtml;
+  inputsEl.innerHTML = inputsHtml || '<div class="hint">（全空欄が表示されています）</div>';
 
-  // 答え合わせ
+  // ── 答え合わせ ──
   document.getElementById("dqCheckBtn").addEventListener("click", () => {
-    const normalize = s => s.replace(/\s/g,"").replace(/[Ａ-Ｚａ-ｚ０-９]/g,c=>String.fromCharCode(c.charCodeAt(0)-0xFEE0)).toLowerCase();
+    const normalize = s =>
+      s.replace(/\s/g,"")
+       .replace(/[Ａ-Ｚａ-ｚ０-９]/g, c => String.fromCharCode(c.charCodeAt(0)-0xFEE0))
+       .toLowerCase();
     let allOk = true;
-    card.blanks.forEach((b, i) => {
-      const inp = document.getElementById("dqi_"+b.id);
-      const hint = document.getElementById("dqh_"+b.id);
+    hiddenMasks.forEach(m => {
+      const inp  = document.getElementById("dqi_"+m.id);
+      const hint = document.getElementById("dqh_"+m.id);
+      if (!inp) return;
       const val = (inp.value||"").trim();
-      const ok = normalize(val) === normalize(b.answer)
-        || (normalize(b.answer).includes(normalize(val)) && normalize(val).length >= 2);
+      const ok  = normalize(val) === normalize(m.answer)
+               || (normalize(m.answer).includes(normalize(val)) && normalize(val).length >= 2);
       inp.style.borderColor = ok ? "var(--ok)" : "var(--bad)";
-      hint.textContent = `正解: ${b.answer}`;
+      hint.textContent = `正解: ${m.answer}`;
       hint.classList.remove("hidden");
       hint.style.color = ok ? "var(--ok)" : "var(--bad)";
       if (!ok) allOk = false;
-      // 図の中のblankも色付け
-      const blankEls = v.querySelectorAll(".diag-blank");
-      if (blankEls[i]) {
-        blankEls[i].textContent = b.answer;
-        blankEls[i].style.background = ok ? "rgba(76,175,80,0.25)" : "rgba(239,83,80,0.25)";
-        blankEls[i].style.borderColor = ok ? "var(--ok)" : "var(--bad)";
-        blankEls[i].style.color = ok ? "var(--ok)" : "var(--bad)";
-      }
+
+      // 図内の「？」にも答えを書き込む
+      v.querySelectorAll(`[data-bid="${m.id}"]`).forEach(el => {
+        el.textContent = m.answer;
+        el.style.background = ok ? "rgba(76,175,80,0.25)" : "rgba(239,83,80,0.25)";
+        el.style.borderColor = ok ? "var(--ok)" : "var(--bad)";
+        el.style.color       = ok ? "var(--ok)" : "var(--bad)";
+      });
     });
-    // ボタンを次へ変更
-    document.getElementById("dqActionRow").innerHTML = `
-      <span style="font-size:13px;color:${allOk?"var(--ok)":"var(--bad)"};font-weight:700">
-        ${allOk ? "✓ 全問正解！" : "✗ 不正解あり"}
-      </span>
-    `;
-    showToast(allOk ? "全問正解！" : "答えを確認してください");
+    document.getElementById("dqActionRow").innerHTML =
+      `<span style="font-size:14px;font-weight:700;color:${allOk?"var(--ok)":"var(--bad)"}">
+         ${allOk ? "✓ 全問正解！" : "✗ 不正解あり（赤を確認）"}
+       </span>`;
+    showToast(allOk ? "全問正解！" : "赤い欄を確認してください");
   });
 
   document.getElementById("dqBackBtn").addEventListener("click", () => renderFlash());
