@@ -106,6 +106,151 @@ header {
 }
 .today-btn:active { transform: scale(0.95); }
 
+/* ===== Pomodoro Timer ===== */
+.pomo-float {
+  position: fixed; left: 14px; bottom: 14px; z-index: 50;
+  background: var(--surface); border: 2px solid var(--border);
+  border-radius: 14px; padding: 8px 12px; cursor: pointer;
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  user-select: none; transition: border-color 0.3s, background 0.3s;
+  min-width: 64px;
+}
+.pomo-float.work-running  { border-color: var(--ok);   background: rgba(76,175,80,0.15); }
+.pomo-float.break-running { border-color: var(--accent); background: rgba(244,123,39,0.15); }
+.pomo-float-icon { font-size: 20px; line-height: 1; }
+.pomo-float-time { font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--text); letter-spacing: 0.05em; }
+
+.pomo-panel {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 200;
+  padding: 0 12px 16px; padding-bottom: calc(16px + env(safe-area-inset-bottom));
+}
+.pomo-panel.hidden { display: none; }
+.pomo-panel-inner {
+  background: var(--surface); border-radius: 20px 20px 0 0;
+  border: 2px solid var(--border); border-bottom: none;
+  padding: 20px 16px 8px; text-align: center;
+  box-shadow: 0 -8px 32px rgba(0,0,0,0.5);
+}
+.pomo-phase-tabs { display: flex; gap: 8px; margin-bottom: 16px; }
+.pomo-phase-btn {
+  flex: 1; padding: 10px; border-radius: 10px; font-size: 14px; font-weight: 700;
+  border: 2px solid var(--border); background: var(--surface2); color: var(--muted); cursor: pointer;
+  font-family: inherit;
+}
+.pomo-phase-btn.active.work  { border-color: var(--ok);   background: rgba(76,175,80,0.15);   color: var(--ok); }
+.pomo-phase-btn.active.break { border-color: var(--accent); background: rgba(244,123,39,0.15); color: var(--accent); }
+.pomo-phase-btn.active { border-color: var(--ok); background: rgba(76,175,80,0.15); color: var(--ok); }
+
+.pomo-big-time {
+  font-size: 72px; font-weight: 700; font-variant-numeric: tabular-nums;
+  color: var(--text); letter-spacing: -2px; line-height: 1.1; margin: 8px 0 16px;
+}
+.pomo-big-time.work-run  { color: var(--ok); }
+.pomo-big-time.break-run { color: var(--accent); }
+
+.pomo-panel-controls { display: flex; gap: 10px; margin-bottom: 14px; }
+.pomo-reset-btn { flex: 1; padding: 14px; font-size: 15px; }
+.pomo-start-btn {
+  flex: 2; padding: 14px; font-size: 15px; font-weight: 700;
+  background: var(--ok); color: #fff; border-color: var(--ok);
+}
+.pomo-start-btn.pause { background: var(--warn); border-color: var(--warn); }
+.pomo-start-btn.break-mode { background: var(--accent); border-color: var(--accent); }
+
+.pomo-settings-row {
+  display: flex; justify-content: center; gap: 20px;
+  font-size: 13px; color: var(--muted); margin-bottom: 10px;
+}
+.pomo-min-input {
+  width: 50px; background: var(--surface2); color: var(--text);
+  border: 1px solid var(--border); border-radius: 6px;
+  padding: 4px 6px; font-size: 13px; text-align: center; font-family: inherit;
+}
+.pomo-count-row { font-size: 13px; color: var(--muted); margin-bottom: 12px; }
+.pomo-count-row b { color: var(--accent); font-size: 18px; }
+.pomo-close-btn {
+  background: transparent; border: none; color: var(--muted);
+  font-size: 13px; cursor: pointer; padding: 4px 12px; font-family: inherit;
+}
+/* ===== Day Plan Timeline ===== */
+.dpt-row {
+  display: flex; align-items: flex-start; gap: 8px;
+  padding: 9px 10px; border-radius: 8px; margin-bottom: 4px;
+  border-left: 3px solid var(--border);
+  background: rgba(0,0,0,0.15);
+}
+.dpt-study  { border-left-color: var(--ok); }
+.dpt-meal   { border-left-color: var(--accent); background: rgba(244,123,39,0.08); }
+.dpt-break  { border-left-color: var(--muted); }
+.dpt-current {
+  border-left-color: #fff; background: rgba(255,255,255,0.08);
+  box-shadow: 0 0 0 1px rgba(255,255,255,0.2);
+}
+.dpt-done { opacity: 0.45; }
+.dpt-time {
+  font-size: 10px; color: var(--muted); white-space: nowrap;
+  min-width: 86px; padding-top: 2px;
+}
+.dpt-label { flex: 1; font-size: 12.5px; line-height: 1.45; color: var(--text); }
+.dpt-status { flex-shrink: 0; display: flex; flex-direction: column; align-items: flex-end; gap: 3px; }
+.dpt-pomo-badge {
+  font-size: 10px; background: rgba(76,175,80,0.2); color: var(--ok);
+  border-radius: 4px; padding: 1px 5px; white-space: nowrap;
+}
+.dpt-now-badge {
+  font-size: 10px; font-weight: 700; background: #fff; color: #000;
+  border-radius: 4px; padding: 1px 5px; white-space: nowrap;
+}
+.dpt-done-mark { font-size: 11px; color: var(--ok); white-space: nowrap; }
+.dpt-summary {
+  margin-top: 10px; padding: 8px; background: rgba(0,0,0,0.2);
+  border-radius: 8px; text-align: center; font-size: 12px;
+  color: var(--accent); font-weight: 700;
+}
+/* 模試ブロック（本番形式・ポモなし） */
+.dpt-mock { border-left-color: #ce93d8; background: rgba(206,147,216,0.1); }
+.dpt-mock-badge {
+  font-size: 10px; font-weight: 700; background: rgba(206,147,216,0.25); color: #ce93d8;
+  border-radius: 4px; padding: 1px 5px; white-space: nowrap;
+}
+/* バッファ表示バー */
+.dpt-buf-bar {
+  text-align: center; padding: 7px; border-radius: 8px; margin-bottom: 8px;
+  font-size: 13px; font-weight: 700;
+}
+.buf-pos { color: var(--ok); }
+.buf-neg { color: var(--bad); }
+/* 完了ボタン */
+.dpt-done-btn {
+  font-size: 11px; font-weight: 700; font-family: inherit;
+  background: var(--ok); color: #fff; border: none;
+  border-radius: 6px; padding: 4px 9px; cursor: pointer; white-space: nowrap;
+}
+.dpt-done-btn:active { opacity: 0.7; }
+/* 詰めモードトグル */
+.dpt-toggle-row { margin-bottom: 8px; }
+.dpt-compress-btn {
+  width: 100%; padding: 9px; border-radius: 8px; font-family: inherit;
+  font-size: 12px; font-weight: 700; cursor: pointer;
+  background: var(--surface2); color: var(--muted); border: 1px solid var(--border);
+}
+.dpt-compress-btn.active { background: rgba(76,175,80,0.18); color: var(--ok); border-color: var(--ok); }
+/* 空き時間バー */
+.dpt-free-bar {
+  background: rgba(76,175,80,0.18); color: var(--ok);
+  border-radius: 8px; padding: 8px; margin-bottom: 8px;
+  font-size: 12px; font-weight: 700; text-align: center; line-height: 1.4;
+}
+.dpt-over-bar {
+  background: rgba(239,83,80,0.18); color: var(--bad);
+  border-radius: 8px; padding: 8px; margin-bottom: 8px;
+  font-size: 12px; font-weight: 700; text-align: center;
+}
+/* 詰めで時刻がずれた表示 */
+.dpt-time-orig { text-decoration: line-through; color: var(--border); display: block; font-size: 9px; }
+.dpt-time-new  { color: var(--ok); font-weight: 700; display: block; }
+
 /* ===== View container ===== */
 main { padding: 12px 12px 20px; }
 .view { display: none; }
@@ -718,6 +863,33 @@ main { padding: 12px 12px 20px; }
 </main>
 
 <button class="today-btn" id="today-btn" title="今日へ">今日</button>
+
+<!-- ポモドーロタイマー -->
+<div class="pomo-float" id="pomoFloat" title="タイマー開始/一時停止">
+  <div class="pomo-float-icon" id="pomoIcon">🍅</div>
+  <div class="pomo-float-time" id="pomoFloatTime">45:00</div>
+</div>
+
+<div class="pomo-panel hidden" id="pomoPanel">
+  <div class="pomo-panel-inner">
+    <div class="pomo-phase-tabs">
+      <button class="pomo-phase-btn active" id="pomoBtnWork">🍅 作業</button>
+      <button class="pomo-phase-btn" id="pomoBtnBreak">☕ 休憩</button>
+    </div>
+    <div class="pomo-big-time" id="pomoBigTime">45:00</div>
+    <div class="pomo-panel-controls">
+      <button class="btn pomo-reset-btn" id="pomoReset">↺ リセット</button>
+      <button class="btn pomo-start-btn" id="pomoStart">▶ 開始</button>
+    </div>
+    <div class="pomo-settings-row">
+      <label>作業: <input type="number" id="pomoWorkMin" class="pomo-min-input" value="45" min="1" max="90" inputmode="numeric">分</label>
+      <label>休憩: <input type="number" id="pomoBreakMin" class="pomo-min-input" value="10" min="1" max="30" inputmode="numeric">分</label>
+    </div>
+    <div class="pomo-count-row">本日完了: <b id="pomoCount">0</b> ポモ 🍅</div>
+    <button class="btn" id="pomoDayPlan" style="width:100%;margin-bottom:8px;padding:10px;font-size:13px">📋 今日の全日タイムライン</button>
+    <button class="pomo-close-btn" id="pomoClose">✕ 閉じる</button>
+  </div>
+</div>
 <div class="toast" id="toast"></div>
 <div class="update-banner" id="update-banner">
   <span>新しいバージョンがあります</span>
@@ -801,43 +973,59 @@ const SCHEDULE = [
       {id:"p2_q18", label:"教材タブ: 1-8 確認テスト"},
       {id:"p2_q15", label:"教材タブ: 1-5 確認テスト"}
     ], memo:"午前中3h・自動化の整理＋S3⇔CloudFrontの使い分けを区別" },
-  { date:"6/3", dow:"水", shift:"休み", shiftClass:"off", workTime:"終日勉強可", targetHours:7,
+  { date:"6/3", dow:"水", shift:"★集中日①", shiftClass:"off", workTime:"8:00〜23:00", targetHours:11,
     tasks:[
-      {id:"p3_ch4", label:"【Ph2】4-1〜4-5 パフォーマンス全範囲 通読 (3h)"},
-      {id:"t603_m2", label:"模擬試験② 受験（目標55〜60%）"},
-      {id:"t603_m2rv", label:"模試②の間違い分析・解説確認 (2h)"}
-    ], memo:"終日7h: 午前=4章通読(3h)→午後=模試②(2h)→夜=復習(2h)" },
-  { date:"6/4", dow:"木", shift:"A勤", shiftClass:"", workTime:"08:30〜17:30", targetHours:3,
+      {id:"c3_ch4",    label:"[3ポモ]  8:00〜10:35 ▶ 4-1〜4-5 パフォーマンス全範囲 通読"},
+      {id:"c3_ch5",    label:"[3ポモ] 10:45〜13:20 ▶ 5-1〜5-4 コスト最適化全範囲 通読 ← 参考書 完全読了！"},
+      {id:"c3_lunch",  label:"🍽 昼食  13:20〜13:50（30分）"},
+      {id:"c3_mockA",  label:"[模試]  13:50〜16:00 ▶ 学習模試A 本番（130分・ポモなし）"},
+      {id:"c3_mockArv",label:"[2ポモ] 16:10〜17:50 ▶ 学習模試A 間違い全問 解説精読"},
+      {id:"c3_dinner", label:"🍽 夕食  17:50〜18:50（60分）"},
+      {id:"c3_vpc",    label:"[2ポモ] 18:50〜20:30 ▶ 弱点① VPC/NW 1-2＋2-3 要点精読"},
+      {id:"c3_sec",    label:"[2ポモ] 20:40〜22:20 ▶ 弱点② セキュリティ 2-1〜2-5 各サービス役割 音読で暗記"}
+    ], memo:"★12ポモ+模試130分（実質11h）食事: 昼30分・夕60分。模試中はポモなし本番形式。バッファ約40分あり。" },
+  { date:"6/4", dow:"木", shift:"★集中日②", shiftClass:"off", workTime:"7:00〜23:00", targetHours:13,
     tasks:[
-      {id:"p4_ch5a", label:"【Ph2】5-1, 5-2 通読 (1.5h)"},
-      {id:"p4_sec", label:"【弱点⑥】2-1〜2-5 セキュリティ役割一覧化(IAM/WAF/Shield/KMS/Secrets/CloudTrail) (1.5h)"}
-    ], memo:"夕方〜夜3h: 5章前半+セキュリティ整理" },
-  { date:"6/5", dow:"金", shift:"休み", shiftClass:"off", workTime:"終日勉強可", targetHours:7,
+      {id:"c4_cfn",    label:"[2ポモ]  7:00〜 8:40 ▶ 弱点③ 1-8 CloudFormation/自動化 精読"},
+      {id:"c4_las",    label:"[2ポモ]  8:45〜10:25 ▶ 弱点④ Lambda(1-4)＋Auto Scaling(3-3) 精読"},
+      {id:"c4_bfast",  label:"☕ 朝食バッファ  10:25〜10:55（30分）"},
+      {id:"c4_mockB",  label:"[模試]  10:55〜13:05 ▶ 学習模試B 本番（130分・ポモなし）"},
+      {id:"c4_lunch",  label:"🍽 昼食  13:05〜13:35（30分）"},
+      {id:"c4_mockBrv",label:"[2ポモ] 13:35〜15:15 ▶ 学習模試B 間違い全問 解説精読"},
+      {id:"c4_mockC",  label:"[模試]  15:20〜17:30 ▶ 学習模試C 本番（130分・ポモなし）"},
+      {id:"c4_mockCrv",label:"[2ポモ] 17:35〜19:15 ▶ 学習模試C 間違い全問 解説精読"},
+      {id:"c4_rematch",label:"[3ポモ] 19:20〜21:55 ▶ 模試A・B・C 間違い問題 全部再演習 ★最重要"},
+      {id:"c4_summary",label:"[1ポモ] 22:00〜22:45 ▶ 重要サービス比較まとめ暗記 VPC/SG/NACL/ELB/AS"}
+    ], memo:"★10ポモ+模試2本（実質13h）食事: 朝30分・昼30分。7時スタート→22:45終了。模試中はポモなし本番形式。" },
+  { date:"6/5", dow:"金", shift:"★集中日③", shiftClass:"off", workTime:"7:00〜18:00", targetHours:9,
     tasks:[
-      {id:"p5_ch5b", label:"【Ph2】5-3, 5-4 通読 (1.5h)"},
-      {id:"p5_14", label:"【弱点④】1-4 Lambda/API Gateway 復習・確認テスト (1h)"},
-      {id:"p5_33", label:"【弱点⑤】3-3 ELB/Auto Scaling 復習・確認テスト (1h)"},
-      {id:"t605_m3", label:"模擬試験③ 受験（目標65〜70%）"},
-      {id:"t605_m3rv", label:"模試③復習・弱点ピックアップ (1.5h)"}
-    ], memo:"終日7h: 5章後半(1.5h)+Lambda(1h)+AS(1h)+模試③(2h)+復習(1.5h)" },
+      {id:"c5_check",  label:"[2ポモ]  7:00〜 8:40 ▶ 弱点最終確認 VPC・自動化・セキュリティ キーワード一覧"},
+      {id:"t605_m3",   label:"[模試]   8:45〜10:55 ▶ 実力模試① 本番形式・時間計測（130分・ポモなし）"},
+      {id:"c5_lunch",  label:"🍽 昼食  10:55〜11:25（30分）"},
+      {id:"c5_rv",     label:"[2ポモ] 11:25〜13:05 ▶ 実力模試① 間違い全問 解説精読"},
+      {id:"c5_rematch",label:"[2ポモ] 13:10〜14:50 ▶ 間違い問題 再演習"},
+      {id:"c5_vocab",  label:"[2ポモ] 14:55〜16:35 ▶ 単語帳で弱点最終確認"},
+      {id:"c5_prep",   label:"[1ポモ] 16:40〜17:25 ▶ 6/6に向けた重要サービス総まとめ"}
+    ], memo:"★9ポモ+模試130分（実質9h）7時スタート→17:25終了。目標65%以上。バッファ約35分。※18時以降は予定あり" },
   { date:"6/6", dow:"土", shift:"夜勤1日目", shiftClass:"night1", workTime:"21:00〜33:30", targetHours:3,
     tasks:[
-      {id:"t606_m4", label:"模擬試験④ 受験（目標72%以上）"},
-      {id:"p6_summary", label:"重要サービス総まとめ(VPC/EC2/S3/IAM/RDS/ELB/Route53/Lambda)"},
+      {id:"t606_m4", label:"夕方まで ▶ 実力模試② 本番形式・時間計測あり（目標65〜70%）"},
+      {id:"p6_summary", label:"実力模試② 間違い全問 解説確認"},
       {id:"t606_3", label:"夜勤隙間: Black Belt：IAM / CloudFront"}
-    ], memo:"夕方まで3h: 模試④→総まとめ。夜勤前は無理しない" },
+    ], memo:"夕方まで3h: 実力模試②→間違い確認。夜勤前は無理しない" },
   { date:"6/7", dow:"日", shift:"夜勤2日目前", shiftClass:"night2pre", workTime:"21:00〜33:30", targetHours:0,
     tasks:[{id:"t607_1", label:"絶対に休む（勉強NG・睡眠優先）"}], memo:"" },
   { date:"6/8", dow:"月", shift:"夜勤明け", shiftClass:"nightafter", workTime:"〜16時帰宅", targetHours:1.5,
     tasks:[
-      {id:"t608_1", label:"模試④の徹底復習(なぜこの選択肢かを声に出す)"},
-      {id:"t608_2", label:"苦手分野の最終確認(新範囲NG)"}
+      {id:"t608_1", label:"実力模試②の復習（なぜこの選択肢かを声に出す）"},
+      {id:"t608_2", label:"苦手分野の最終確認（新範囲NG）"}
     ], memo:"16時帰宅→16〜17:30のみ" },
   { date:"6/9", dow:"火", shift:"休み", shiftClass:"off", workTime:"終日勉強可", targetHours:4,
     tasks:[
-      {id:"t609_1", label:"苦手ポイントのみ（新範囲NG）"},
-      {id:"t609_2", label:"21時には就寝（早寝厳守）"}
-    ], memo:"早寝厳守" },
+      {id:"t609_1", label:"苦手ポイント最終確認（新範囲NG）"},
+      {id:"c9_m3", label:"実力模試③ 本番形式・時間計測（目標72%以上）"},
+      {id:"t609_2", label:"実力模試③ 間違いのみ確認→21時就寝厳守"}
+    ], memo:"早寝厳守・新範囲NG" },
   { date:"6/10", dow:"水", shift:"試験日", shiftClass:"exam", workTime:"-", targetHours:0.5,
     tasks:[
       {id:"t610_1", label:"朝：重要サービスをさらっと眺める"},
@@ -847,9 +1035,9 @@ const SCHEDULE = [
 
 const EXAMS = [
   { id:"mock1", name:"模擬試験① (5/30)", target:"60〜70%（実績32%）" },
-  { id:"mock2", name:"模擬試験② (6/3)",  target:"55〜60%" },
-  { id:"mock3", name:"模擬試験③ (6/5)",  target:"65〜70%" },
-  { id:"mock4", name:"模擬試験④ (6/6)",  target:"72%以上" },
+  { id:"mock2", name:"実力模試① (6/5)",  target:"65%以上" },
+  { id:"mock3", name:"実力模試② (6/6)",  target:"65〜70%" },
+  { id:"mock4", name:"実力模試③ (6/9)",  target:"72%以上" },
   { id:"main",  name:"本番試験 (6/10)",  target:"720/1000点以上" }
 ];
 
@@ -2203,7 +2391,7 @@ function renderExam() {
       } else {
         let threshold = 70;
         if (ex.id === "mock1") threshold = 60;
-        if (ex.id === "mock4") threshold = 80;
+        if (ex.id === "mock4") threshold = 72;
         if (sc >= threshold) badge = '<span class="score-badge pass">達</span>';
         else if (sc >= threshold - 10) badge = '<span class="score-badge near">近</span>';
         else badge = '<span class="score-badge fail">要</span>';
@@ -2391,6 +2579,389 @@ function renderAll() {
   renderSchedule();
 }
 
+// ===== Day Plans（全日タイムライン）=====
+// type: "study"(ポモ), "mock"(模試本番130分・ポモなし), "meal", "break"
+const DAY_PLANS = {
+  "6/3": {
+    label: "★集中日① 6/3（8:00〜23:00）",
+    limitH: 23, limitM: 0,
+    blocks: [
+      { type:"study", label:"4章通読（パフォーマンス）",               pomos:3, startH:8,  startM:0  },
+      { type:"study", label:"5章通読（コスト最適化）← 参考書完全読了！", pomos:3, startH:10, startM:45 },
+      { type:"meal",  label:"🍽 昼食",                                  min:30,  startH:13, startM:20 },
+      { type:"mock",  label:"📝 学習模試A 本番（ポモなし）",            min:130, startH:13, startM:50 },
+      { type:"study", label:"学習模試A 間違い全問 解説精読",             pomos:2, startH:16, startM:10 },
+      { type:"meal",  label:"🍽 夕食",                                  min:60,  startH:17, startM:50 },
+      { type:"study", label:"弱点① VPC/NW（1-2＋2-3）精読",          pomos:2, startH:18, startM:50 },
+      { type:"study", label:"弱点② セキュリティ（2-1〜2-5）音読暗記", pomos:2, startH:20, startM:40 }
+    ]
+  },
+  "6/4": {
+    label: "★集中日② 6/4（7:00〜23:00）",
+    limitH: 23, limitM: 0,
+    blocks: [
+      { type:"study", label:"弱点③ CloudFormation/自動化（1-8）精読",    pomos:2, startH:7,  startM:0  },
+      { type:"study", label:"弱点④ Lambda(1-4)＋Auto Scaling(3-3)精読", pomos:2, startH:8,  startM:45 },
+      { type:"break", label:"☕ 朝食バッファ",                             min:30,  startH:10, startM:25 },
+      { type:"mock",  label:"📝 学習模試B 本番（ポモなし）",              min:130, startH:10, startM:55 },
+      { type:"meal",  label:"🍽 昼食",                                    min:30,  startH:13, startM:5  },
+      { type:"study", label:"学習模試B 間違い全問 解説精読",               pomos:2, startH:13, startM:35 },
+      { type:"mock",  label:"📝 学習模試C 本番（ポモなし）",              min:130, startH:15, startM:20 },
+      { type:"study", label:"学習模試C 間違い全問 解説精読",               pomos:2, startH:17, startM:35 },
+      { type:"study", label:"★ 模試A・B・C 間違い問題 全部再演習",       pomos:3, startH:19, startM:20 },
+      { type:"study", label:"重要サービス比較まとめ暗記",                  pomos:1, startH:22, startM:0  }
+    ]
+  },
+  "6/5": {
+    label: "★集中日③ 6/5（7:00〜18:00）",
+    limitH: 18, limitM: 0,
+    blocks: [
+      { type:"study", label:"弱点最終確認 キーワード一覧",              pomos:2, startH:7,  startM:0  },
+      { type:"mock",  label:"📝 実力模試① 本番（ポモなし）",           min:130, startH:8,  startM:45 },
+      { type:"meal",  label:"🍽 昼食",                                 min:30,  startH:10, startM:55 },
+      { type:"study", label:"実力模試① 間違い全問 解説精読",            pomos:2, startH:11, startM:25 },
+      { type:"study", label:"★ 間違い問題 再演習",                     pomos:2, startH:13, startM:10 },
+      { type:"study", label:"単語帳で弱点最終確認",                     pomos:2, startH:14, startM:55 },
+      { type:"study", label:"6/6に向けた重要サービス総まとめ",          pomos:1, startH:16, startM:40 }
+    ]
+  }
+};
+
+function pomBlockDur(b) {
+  if (b.type === "study") return b.pomos * 45 + Math.max(0, b.pomos - 1) * 10;
+  return b.min || 0;
+}
+function toMin(h, m) { return h * 60 + m; }
+function fmtHM(totalMin) {
+  const h = Math.floor(totalMin / 60) % 24;
+  const m = totalMin % 60;
+  return `${h}:${String(m).padStart(2,"0")}`;
+}
+
+const _dayActual = {};   // "日付_index" -> 実際の完了時刻(分)
+const _dayCompress = {};  // "日付" -> bool（詰めモードON/OFF）
+let _dayPlanTimerRef = null;
+
+// 各ブロックの effStart/effEnd を計算（詰めモード対応）
+function computeDayTimeline(plan, today) {
+  const compress = !!_dayCompress[today];
+  const rows = [];
+  let prevEnd = null;
+  plan.blocks.forEach((b, i) => {
+    const key    = `${today}_${i}`;
+    const dur    = pomBlockDur(b);
+    const planS  = toMin(b.startH, b.startM);
+    const planE  = planS + dur;
+    const actDone= _dayActual[key] !== undefined;
+    let effS, effE;
+    if (compress) {
+      // 前ブロックの実際/予定終了に詰める（初回は予定開始）
+      effS = (prevEnd === null) ? planS : prevEnd;
+      effE = actDone ? _dayActual[key] : effS + dur;
+    } else {
+      effS = planS;
+      effE = actDone ? _dayActual[key] : planE;
+    }
+    prevEnd = effE;
+    rows.push({ b, i, key, dur, planS, planE, effS, effE, actDone });
+  });
+  return rows;
+}
+
+function renderDayPlan() {
+  const today  = getToday();
+  const plan   = DAY_PLANS[today];
+  const v      = document.getElementById("pomoPanel");
+  const nowMin = new Date().getHours() * 60 + new Date().getMinutes();
+  const compress = !!_dayCompress[today];
+
+  if (!plan) {
+    v.innerHTML = `<div class="pomo-panel-inner">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <h3 style="margin:0;font-size:13px;color:var(--accent)">今日の計画なし</h3>
+        <button class="pomo-close-btn" id="dayPlanClose" style="font-size:15px">✕</button>
+      </div>
+      <div class="empty-msg" style="font-size:13px">今日（${today}）の集中日計画はありません。<br>※6/3・6/4・6/5のみ対応</div>
+    </div>`;
+    v.classList.remove("hidden");
+    document.getElementById("dayPlanClose").addEventListener("click", () => v.classList.add("hidden"));
+    return;
+  }
+
+  const rows = computeDayTimeline(plan, today);
+  const limitMin = toMin(plan.limitH, plan.limitM);
+
+  // バッファ（実際完了の累積差）
+  let bufMin = 0;
+  rows.forEach(r => { if (r.actDone) bufMin += r.planE - r.effE; });
+
+  // 詰めモード時の空き時間 = リミット - 最後のブロックの effE
+  const lastEnd = rows.length ? rows[rows.length-1].effE : limitMin;
+  const freeMin = limitMin - lastEnd;
+
+  let totalPomos = 0, donePomos = 0;
+  rows.forEach(r => {
+    if (r.b.type !== "study") return;
+    totalPomos += r.b.pomos;
+    if (r.actDone || nowMin >= r.effE) donePomos += r.b.pomos;
+  });
+
+  const bufStr = bufMin > 0 ? `<span class="buf-pos">⏰ +${bufMin}分 早い</span>`
+               : bufMin < 0 ? `<span class="buf-neg">⚠ ${Math.abs(bufMin)}分 遅れ</span>` : "";
+  const freeStr = (compress && freeMin > 0)
+    ? `<div class="dpt-free-bar">🎉 空き時間 ${Math.floor(freeMin/60)}時間${freeMin%60}分 created（${fmtHM(lastEnd)}に全終了 → ${fmtHM(limitMin)}まで自由）</div>` : "";
+  const overStr = (freeMin < 0)
+    ? `<div class="dpt-over-bar">⚠ リミット${fmtHM(limitMin)}を ${Math.abs(freeMin)}分 超過</div>` : "";
+
+  let html = `<div class="pomo-panel-inner" style="overflow-y:auto;max-height:88vh;padding-bottom:16px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+      <h3 style="margin:0;font-size:13px;color:var(--accent)">${plan.label}</h3>
+      <button class="pomo-close-btn" id="dayPlanClose" style="font-size:15px">✕</button>
+    </div>
+    <div class="dpt-toggle-row">
+      <button class="dpt-compress-btn${compress?" active":""}" id="dptCompress">
+        ${compress ? "🔽 詰めモード ON（完了に合わせて前倒し）" : "▶ 詰めモード OFF（予定時刻どおり）"}
+      </button>
+    </div>
+    ${freeStr}${overStr}`;
+
+  rows.forEach(r => {
+    const { b, key, effS, effE, planS, planE, actDone } = r;
+    const isCur  = !actDone && nowMin >= effS && nowMin < effE;
+    const isDone = actDone || nowMin >= effE;
+    const shifted = compress && (effS !== planS);
+
+    let cls = "dpt-row";
+    if (b.type === "mock")       cls += " dpt-mock";
+    else if (b.type === "meal")  cls += " dpt-meal";
+    else if (b.type === "break") cls += " dpt-break";
+    else                         cls += " dpt-study";
+    if (isCur)  cls += " dpt-current";
+    if (isDone) cls += " dpt-done";
+
+    const pomoBadge = b.type === "study" ? `<span class="dpt-pomo-badge">${b.pomos}🍅</span>` : "";
+    const mockBadge = b.type === "mock"  ? `<span class="dpt-mock-badge">📝 ${b.min}分</span>` : "";
+    const nowBadge  = isCur ? `<span class="dpt-now-badge">▶NOW</span>` : "";
+    const doneInfo  = actDone ? `<span class="dpt-done-mark">✓${fmtHM(_dayActual[key])}</span>` : "";
+    const doneBtn   = (b.type==="study"||b.type==="mock"||b.type==="meal"||b.type==="break") && !actDone
+      ? `<button class="dpt-done-btn" data-key="${key}">完了✓</button>` : "";
+    // 詰めで時刻がずれた場合は元時刻を打ち消し線で表示
+    const timeHtml = shifted
+      ? `<span class="dpt-time-orig">${fmtHM(planS)}</span><span class="dpt-time-new">${fmtHM(effS)}〜${fmtHM(effE)}</span>`
+      : `${fmtHM(effS)}〜${fmtHM(effE)}`;
+
+    html += `<div class="${cls}">
+      <div class="dpt-time">${timeHtml}</div>
+      <div class="dpt-label">${b.label}${pomoBadge}${mockBadge}</div>
+      <div class="dpt-status">${nowBadge}${doneInfo}${doneBtn}</div>
+    </div>`;
+  });
+
+  html += `<div class="dpt-summary">🍅 ${donePomos}/${totalPomos}ポモ　${bufStr||"オンタイム"}${compress&&freeMin>0?`　／ 空き+${freeMin}分`:""}</div>`;
+  html += `<button class="pomo-close-btn" id="dptResetActual" style="font-size:11px;margin-top:6px">↺ 今日の完了記録をリセット</button>`;
+  html += `</div>`;
+
+  v.innerHTML = html;
+  v.classList.remove("hidden");
+
+  // 詰めモードトグル
+  document.getElementById("dptCompress").addEventListener("click", () => {
+    _dayCompress[today] = !_dayCompress[today];
+    renderDayPlan();
+  });
+  // 完了ボタン
+  v.querySelectorAll(".dpt-done-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const key = btn.getAttribute("data-key");
+      const idx = parseInt(key.split("_")[1], 10);
+      const r   = rows[idx];
+      const actual = new Date().getHours() * 60 + new Date().getMinutes();
+      _dayActual[key] = actual;
+      const gained = r.effE - actual; // 予定終了より何分早いか
+      if (gained > 0) showToast(`✓ 完了！${gained}分 早い${_dayCompress[today]?" → 以降を前倒し":"（詰めモードで前倒し可）"}`);
+      else if (gained < 0) showToast(`✓ 完了（${Math.abs(gained)}分 押し）`);
+      else showToast("✓ 完了（ぴったり）");
+      renderDayPlan();
+    });
+  });
+  // 完了記録リセット
+  document.getElementById("dptResetActual").addEventListener("click", () => {
+    Object.keys(_dayActual).forEach(k => { if (k.startsWith(today + "_")) delete _dayActual[k]; });
+    showToast("今日の完了記録をリセットしました");
+    renderDayPlan();
+  });
+
+  document.getElementById("dayPlanClose").addEventListener("click", () => {
+    v.classList.add("hidden");
+    clearInterval(_dayPlanTimerRef);
+    _dayPlanTimerRef = null;
+  });
+  clearInterval(_dayPlanTimerRef);
+  _dayPlanTimerRef = setInterval(() => {
+    if (!document.getElementById("pomoPanel").classList.contains("hidden")) renderDayPlan();
+  }, 30000);
+}
+
+// ===== Pomodoro Timer =====
+const _pomo = {
+  phase: "work",    // "work" | "break"
+  seconds: 45 * 60,
+  running: false,
+  interval: null,
+  count: 0,         // 今日完了したポモ数
+  workMin: 45,
+  breakMin: 10
+};
+
+function pomoFmt(sec) {
+  const m = String(Math.floor(sec / 60)).padStart(2, "0");
+  const s = String(sec % 60).padStart(2, "0");
+  return `${m}:${s}`;
+}
+function pomoUpdateDisplay() {
+  const t = pomoFmt(_pomo.seconds);
+  document.getElementById("pomoFloatTime").textContent = t;
+  document.getElementById("pomoBigTime").textContent   = t;
+  const bigEl = document.getElementById("pomoBigTime");
+  const floatEl = document.getElementById("pomoFloat");
+  const icon = _pomo.phase === "work" ? "🍅" : "☕";
+  document.getElementById("pomoIcon").textContent = icon;
+  if (_pomo.running) {
+    floatEl.className = "pomo-float " + (_pomo.phase === "work" ? "work-running" : "break-running");
+    bigEl.className   = "pomo-big-time " + (_pomo.phase === "work" ? "work-run" : "break-run");
+  } else {
+    floatEl.className = "pomo-float";
+    bigEl.className   = "pomo-big-time";
+  }
+  // スタートボタン
+  const startBtn = document.getElementById("pomoStart");
+  if (startBtn) {
+    if (_pomo.running) {
+      startBtn.textContent = "⏸ 一時停止";
+      startBtn.className   = "btn pomo-start-btn pause";
+    } else if (_pomo.phase === "break") {
+      startBtn.textContent = "☕ 休憩開始";
+      startBtn.className   = "btn pomo-start-btn break-mode";
+    } else {
+      startBtn.textContent = "▶ 開始";
+      startBtn.className   = "btn pomo-start-btn";
+    }
+  }
+  // タイトル更新（バックグラウンドでも確認可）
+  if (_pomo.running) {
+    document.title = `${_pomo.phase === "work" ? "🍅" : "☕"} ${t} AWS SAA-C03`;
+  } else {
+    document.title = "AWS SAA-C03 合格への道";
+  }
+}
+
+function pomoBuzz() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.frequency.value = _pomo.phase === "work" ? 880 : 660;
+    gain.gain.setValueAtTime(0.3, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.8);
+    osc.start(); osc.stop(ctx.currentTime + 0.8);
+  } catch(e) {}
+  try { navigator.vibrate && navigator.vibrate([200, 100, 200, 100, 400]); } catch(e) {}
+}
+
+function pomoPhaseEnd() {
+  clearInterval(_pomo.interval); _pomo.interval = null; _pomo.running = false;
+  pomoBuzz();
+  if (_pomo.phase === "work") {
+    _pomo.count++;
+    document.getElementById("pomoCount").textContent = _pomo.count;
+    showToast(`🍅 作業完了！${_pomo.count}ポモ達成 → 10分休憩`);
+    _pomo.phase   = "break";
+    _pomo.seconds = _pomo.breakMin * 60;
+    // フェーズタブ切り替え
+    document.getElementById("pomoBtnWork").className  = "pomo-phase-btn";
+    document.getElementById("pomoBtnBreak").className = "pomo-phase-btn active break";
+    // 休憩は自動スタート
+    pomoStart();
+  } else {
+    showToast("☕ 休憩終了！次のポモドーロを始めましょう");
+    _pomo.phase   = "work";
+    _pomo.seconds = _pomo.workMin * 60;
+    document.getElementById("pomoBtnWork").className  = "pomo-phase-btn active work";
+    document.getElementById("pomoBtnBreak").className = "pomo-phase-btn";
+    pomoUpdateDisplay();
+  }
+}
+
+function pomoStart() {
+  if (_pomo.running) {
+    // 一時停止
+    clearInterval(_pomo.interval); _pomo.interval = null; _pomo.running = false;
+    pomoUpdateDisplay(); return;
+  }
+  _pomo.running = true;
+  _pomo.workMin  = parseInt(document.getElementById("pomoWorkMin")?.value  || "45", 10);
+  _pomo.breakMin = parseInt(document.getElementById("pomoBreakMin")?.value || "10", 10);
+  _pomo.interval = setInterval(() => {
+    _pomo.seconds--;
+    if (_pomo.seconds <= 0) { pomoPhaseEnd(); return; }
+    pomoUpdateDisplay();
+  }, 1000);
+  pomoUpdateDisplay();
+}
+
+function pomoReset() {
+  clearInterval(_pomo.interval); _pomo.interval = null; _pomo.running = false;
+  _pomo.workMin  = parseInt(document.getElementById("pomoWorkMin")?.value  || "45", 10);
+  _pomo.breakMin = parseInt(document.getElementById("pomoBreakMin")?.value || "10", 10);
+  _pomo.seconds  = (_pomo.phase === "work" ? _pomo.workMin : _pomo.breakMin) * 60;
+  pomoUpdateDisplay();
+}
+
+function initPomoEvents() {
+  document.getElementById("pomoFloat").addEventListener("click", () => {
+    const panel = document.getElementById("pomoPanel");
+    panel.classList.toggle("hidden");
+    pomoUpdateDisplay();
+  });
+  document.getElementById("pomoClose").addEventListener("click", () => {
+    document.getElementById("pomoPanel").classList.add("hidden");
+  });
+  document.getElementById("pomoStart").addEventListener("click", pomoStart);
+  document.getElementById("pomoReset").addEventListener("click", pomoReset);
+  document.getElementById("pomoBtnWork").addEventListener("click", () => {
+    if (_pomo.running) { clearInterval(_pomo.interval); _pomo.interval = null; _pomo.running = false; }
+    _pomo.phase = "work";
+    _pomo.seconds = (_pomo.workMin = parseInt(document.getElementById("pomoWorkMin")?.value||"45",10)) * 60;
+    document.getElementById("pomoBtnWork").className  = "pomo-phase-btn active work";
+    document.getElementById("pomoBtnBreak").className = "pomo-phase-btn";
+    pomoUpdateDisplay();
+  });
+  document.getElementById("pomoBtnBreak").addEventListener("click", () => {
+    if (_pomo.running) { clearInterval(_pomo.interval); _pomo.interval = null; _pomo.running = false; }
+    _pomo.phase = "break";
+    _pomo.seconds = (_pomo.breakMin = parseInt(document.getElementById("pomoBreakMin")?.value||"10",10)) * 60;
+    document.getElementById("pomoBtnWork").className  = "pomo-phase-btn";
+    document.getElementById("pomoBtnBreak").className = "pomo-phase-btn active break";
+    pomoUpdateDisplay();
+  });
+  document.getElementById("pomoDayPlan").addEventListener("click", () => {
+    renderDayPlan();
+  });
+  document.getElementById("pomoWorkMin").addEventListener("change", e => {
+    if (!_pomo.running && _pomo.phase === "work") {
+      _pomo.workMin = parseInt(e.target.value||"45",10);
+      _pomo.seconds = _pomo.workMin * 60; pomoUpdateDisplay();
+    }
+  });
+  document.getElementById("pomoBreakMin").addEventListener("change", e => {
+    if (!_pomo.running && _pomo.phase === "break") {
+      _pomo.breakMin = parseInt(e.target.value||"10",10);
+      _pomo.seconds  = _pomo.breakMin * 60; pomoUpdateDisplay();
+    }
+  });
+}
+
 // ===== Init =====
 document.querySelectorAll(".tab").forEach(t => {
   t.addEventListener("click", () => switchView(t.getAttribute("data-view")));
@@ -2400,6 +2971,8 @@ document.getElementById("today-btn").addEventListener("click", scrollToToday);
 loadState();
 seedDefaultDecks();
 renderAll();
+initPomoEvents();
+pomoUpdateDisplay();
 
 // auto-scroll to today on first load
 setTimeout(() => {
