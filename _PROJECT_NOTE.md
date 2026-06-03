@@ -15,12 +15,14 @@
 | `manifest.json` | PWAマニフェスト | ほぼ固定 |
 | `icon.svg` / `icon-maskable.svg` | アプリアイコン | 固定 |
 | `study_data.js` | 教材データ（`const STUDY_DATA`）。28節・用語・要点・確認テスト | 自動生成 |
-| `flashcard_data.js` | 単語帳データ（`const VOCAB_CARDS`＝364件 / `const DIAGRAM_CARDS`＝27図） | 自動生成 |
+| `flashcard_data.js` | 単語帳データ（`VOCAB_CARDS`＝434件 / `DIAGRAM_CARDS`＝27図 / `INDEX_ITEMS`＝384語） | 自動生成 |
 
 ### データ生成スクリプト（編集元）
 - `E:\勉強用\SAA\gen_study_data.py` → `study_data.js` を生成
 - `E:\勉強用\SAA\gen_flashcard_data.py` → `flashcard_data.js` を生成（用語はCSVから自動、図解カードはスクリプト内に手書きSVG/HTML）
 - 元素材: `E:\勉強用\SAA\{章フォルダ}\要点\02_用語解説.csv`・`03_要点解説.csv`、`演習問題\演習問題.csv`、`キーワード.txt`
+- 索引: `E:\勉強用\SAA\索引.csv`（用語,意味,関連章）→ `INDEX_ITEMS` に変換、各語をvocabカードへ自動紐づけ
+- 章フォルダは1-1〜5-4の全28節（4・5章も追加済み）
 - 参考書スクショ: `E:\勉強用\SAA\SAAスクショ\{章名}\*.png`（図解カード作成の元ネタ）
 
 ### 再生成コマンド

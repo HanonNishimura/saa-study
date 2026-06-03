@@ -251,6 +251,46 @@ header {
 .dpt-time-orig { text-decoration: line-through; color: var(--border); display: block; font-size: 9px; }
 .dpt-time-new  { color: var(--ok); font-weight: 700; display: block; }
 
+/* ===== 索引（Index） ===== */
+.idx-search-wrap {
+  position: sticky; top: 0; z-index: 5;
+  display: flex; gap: 6px; align-items: center;
+  background: var(--bg); padding: 6px 0 8px;
+}
+.idx-search {
+  flex: 1; font-size: 15px; font-family: inherit;
+  background: var(--surface2); color: var(--text);
+  border: 1px solid var(--border); border-radius: 10px;
+  padding: 11px 12px; outline: none;
+}
+.idx-search:focus { border-color: var(--accent); }
+.idx-clear {
+  flex-shrink: 0; width: 38px; height: 38px; border-radius: 9px;
+  background: var(--surface2); color: var(--muted); border: 1px solid var(--border);
+  font-size: 15px; cursor: pointer;
+}
+.idx-count { font-size: 11px; color: var(--muted); margin: 0 2px 8px; }
+.idx-row {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--surface); border-radius: 9px;
+  padding: 10px 11px; margin-bottom: 6px;
+}
+.idx-main { flex: 1; min-width: 0; }
+.idx-term { font-size: 13.5px; font-weight: 700; color: var(--text); line-height: 1.4; }
+.idx-mean { font-size: 12px; color: var(--muted); line-height: 1.5; margin-top: 3px; }
+.idx-sec {
+  display: inline-block; font-size: 10px; font-weight: 700;
+  background: rgba(244,123,39,0.18); color: var(--accent);
+  border-radius: 4px; padding: 1px 6px; margin-left: 6px; vertical-align: middle;
+}
+.idx-card-btn {
+  flex-shrink: 0; width: 40px; height: 40px; border-radius: 10px;
+  background: rgba(76,175,80,0.15); color: var(--ok);
+  border: 1px solid var(--ok); font-size: 17px; cursor: pointer;
+}
+.idx-card-btn:active { opacity: 0.7; }
+.idx-hl { background: rgba(255,193,7,0.4); color: var(--text); border-radius: 3px; padding: 0 1px; }
+
 /* ===== View container ===== */
 main { padding: 12px 12px 20px; }
 .view { display: none; }
@@ -845,6 +885,7 @@ main { padding: 12px 12px 20px; }
     <button class="tab active" data-view="schedule">予定</button>
     <button class="tab" data-view="study">教材</button>
     <button class="tab" data-view="flash">単語帳</button>
+    <button class="tab" data-view="index">索引</button>
     <button class="tab" data-view="decks">デッキ</button>
     <button class="tab" data-view="stats">統計</button>
     <button class="tab" data-view="exam">模試</button>
@@ -856,6 +897,7 @@ main { padding: 12px 12px 20px; }
   <div class="view active" id="view-schedule"></div>
   <div class="view" id="view-study"></div>
   <div class="view" id="view-flash"></div>
+  <div class="view" id="view-index"></div>
   <div class="view" id="view-decks"></div>
   <div class="view" id="view-stats"></div>
   <div class="view" id="view-exam"></div>
@@ -1750,7 +1792,7 @@ function bindStudyEvents() {
 // セッション状態（quiz中のみ使用・saveStateには入れない）
 let _fSession = null; // { settings, cards:[{type,id,front,back,html,blanks}], idx, results:[] }
 
-const ALL_SECS = ["1-1","1-2","1-3","1-4","1-5","1-6","1-7","1-8","1-9","2-1","2-2","2-3","2-4","2-5","3-1","3-2","3-3","3-4","3-5"];
+const ALL_SECS = ["1-1","1-2","1-3","1-4","1-5","1-6","1-7","1-8","1-9","2-1","2-2","2-3","2-4","2-5","3-1","3-2","3-3","3-4","3-5","4-1","4-2","4-3","4-4","4-5","5-1","5-2","5-3","5-4"];
 
 function flashAvailable() { return typeof VOCAB_CARDS !== "undefined" && typeof DIAGRAM_CARDS !== "undefined"; }
 
@@ -2273,6 +2315,12 @@ function recordFlashResult(ok) {
 
 function finishFlashSession() {
   if (!_fSession) return;
+  // 索引から開いた1枚モードは記録せず索引へ戻る
+  if (_fSession.fromIndex || (_fSession.settings && _fSession.settings.noSave)) {
+    _fSession = null;
+    switchView("index");
+    return;
+  }
   const results = _fSession.results;
   const ok = results.filter(r=>r.ok).length;
   const total = results.length;
@@ -2324,6 +2372,97 @@ function finishFlashSession() {
     renderFlashCard();
   });
   document.getElementById("fHomeBtn").addEventListener("click", () => renderFlash());
+}
+
+// ===== 索引（用語インデックス・検索）=====
+let _indexQuery = "";
+
+// vocabカードidからカードオブジェクトを引く
+function findVocabCardById(cid) {
+  if (!cid || typeof VOCAB_CARDS === "undefined") return null;
+  for (const sec in VOCAB_CARDS) {
+    const c = VOCAB_CARDS[sec].cards.find(x => x.id === cid);
+    if (c) return { type:"vocab", id:c.id, sec, cat:c.cat, front:c.term, back:c.def, reversed:false };
+  }
+  return null;
+}
+
+// 索引項目から単語帳1枚モードを開始
+function startIndexCard(cid) {
+  const card = findVocabCardById(cid);
+  if (!card) { showToast("対応する単語帳カードがありません"); return; }
+  _fSession = { active:true, cards:[card], idx:0, results:[],
+    settings:{ secs:[card.sec], useVocab:true, useDiagram:false, count:1, direction:"normal", goal:100, label:"索引から1枚", noSave:true },
+    date:getToday(), fromIndex:true };
+  switchView("flash");
+  renderFlashCard();
+}
+
+function renderIndex() {
+  const v = document.getElementById("view-index");
+  if (typeof INDEX_ITEMS === "undefined") {
+    v.innerHTML = '<div class="empty-msg">索引データ(flashcard_data.js)が読み込めません。</div>';
+    return;
+  }
+  const q = _indexQuery.trim().toLowerCase();
+  const norm = s => (s||"").toLowerCase().replace(/[Ａ-Ｚａ-ｚ０-９]/g, c=>String.fromCharCode(c.charCodeAt(0)-0xFEE0));
+  const nq = norm(q);
+  const filtered = !nq ? INDEX_ITEMS : INDEX_ITEMS.filter(it =>
+    norm(it.t).includes(nq) || norm(it.m).includes(nq) || norm(it.s).includes(nq)
+  );
+
+  let html = `
+    <div class="idx-search-wrap">
+      <input type="search" id="idxSearch" class="idx-search" placeholder="🔍 用語・意味・章で検索（例: VPC, 暗号化, 1-2）" value="${escapeHtml(_indexQuery)}" autocomplete="off">
+      ${_indexQuery ? `<button class="idx-clear" id="idxClear">✕</button>` : ""}
+    </div>
+    <div class="idx-count">全${INDEX_ITEMS.length}語${nq?` 中 ${filtered.length}件ヒット`:""}</div>
+  `;
+
+  if (!filtered.length) {
+    html += `<div class="empty-msg">「${escapeHtml(_indexQuery)}」に一致する用語がありません</div>`;
+  } else {
+    html += filtered.map(it => {
+      const link = it.cid
+        ? `<button class="idx-card-btn" data-cid="${it.cid}">📇</button>`
+        : "";
+      const secBadge = it.s ? `<span class="idx-sec">${escapeHtml(it.s)}</span>` : "";
+      return `<div class="idx-row">
+        <div class="idx-main">
+          <div class="idx-term">${highlightQ(it.t, q)}${secBadge}</div>
+          <div class="idx-mean">${highlightQ(it.m, q)}</div>
+        </div>
+        ${link}
+      </div>`;
+    }).join("");
+  }
+
+  v.innerHTML = html;
+
+  const inp = document.getElementById("idxSearch");
+  inp.addEventListener("input", () => {
+    _indexQuery = inp.value;
+    const pos = inp.selectionStart;
+    renderIndex();
+    const ni = document.getElementById("idxSearch");
+    ni.focus();
+    try { ni.setSelectionRange(pos, pos); } catch(e){}
+  });
+  const clr = document.getElementById("idxClear");
+  if (clr) clr.addEventListener("click", () => { _indexQuery = ""; renderIndex(); document.getElementById("idxSearch").focus(); });
+  v.querySelectorAll(".idx-card-btn").forEach(btn => {
+    btn.addEventListener("click", () => startIndexCard(btn.getAttribute("data-cid")));
+  });
+}
+
+// 検索語をハイライト
+function highlightQ(text, q) {
+  const safe = escapeHtml(text || "");
+  if (!q) return safe;
+  try {
+    const re = new RegExp("(" + q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + ")", "gi");
+    return safe.replace(re, '<mark class="idx-hl">$1</mark>');
+  } catch(e) { return safe; }
 }
 
 // ===== Stats view =====
@@ -2551,6 +2690,7 @@ function switchView(name) {
   document.querySelectorAll(".view").forEach(v => v.classList.toggle("active", v.id === "view-" + name));
   if (name === "study") renderStudy();
   if (name === "flash") renderFlash();
+  if (name === "index") renderIndex();
   if (name === "decks") renderDecks();
   if (name === "stats") renderStats();
   if (name === "exam") renderExam();
