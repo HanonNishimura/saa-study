@@ -290,6 +290,12 @@ header {
 }
 .idx-card-btn:active { opacity: 0.7; }
 .idx-hl { background: rgba(255,193,7,0.4); color: var(--text); border-radius: 3px; padding: 0 1px; }
+.idx-full { font-size: 11px; color: #7fb8e8; margin-top: 2px; line-height: 1.4; }
+.idx-abbr { font-weight: 700; color: var(--accent); }
+.flash-full {
+  font-size: 13px; color: #7fb8e8; margin-top: 10px; line-height: 1.6;
+  font-weight: 600; letter-spacing: 0.02em;
+}
 
 /* ===== View container ===== */
 main { padding: 12px 12px 20px; }
@@ -1816,7 +1822,7 @@ function buildFlashCards(settings) {
         cards.push({ type:"vocab", id:c.id, sec, cat:c.cat,
           front: rev ? c.def  : c.term,
           back:  rev ? c.term : c.def,
-          reversed: rev });
+          reversed: rev, full: c.full || [] });
       });
     });
   }
@@ -2219,10 +2225,12 @@ function renderFlashCard() {
         <div class="flash-face front" id="flashFront">
           <div class="flash-cat">${escapeHtml(card.cat||card.sec)}</div>
           <div class="${card.reversed?"flash-def":"flash-term"}">${escapeHtml(card.front)}</div>
+          ${(!card.reversed && card.full && card.full.length) ? `<div class="flash-full">${card.full.map(f=>`${escapeHtml(f.a)} = ${escapeHtml(f.e)}`).join("<br>")}</div>` : ""}
           <div class="flash-tap-hint">タップして答えを見る</div>
         </div>
         <div class="flash-face back hidden" id="flashBack">
           <div class="flash-cat">${escapeHtml(card.reversed?"答え":"用語")}: ${escapeHtml(card.front)}</div>
+          ${(card.full && card.full.length) ? `<div class="flash-full">${card.full.map(f=>`${escapeHtml(f.a)} = ${escapeHtml(f.e)}`).join("<br>")}</div>` : ""}
           <div class="${card.reversed?"flash-term":"flash-def"}">${escapeHtml(card.back)}</div>
         </div>
       </div>
@@ -2382,7 +2390,7 @@ function findVocabCardById(cid) {
   if (!cid || typeof VOCAB_CARDS === "undefined") return null;
   for (const sec in VOCAB_CARDS) {
     const c = VOCAB_CARDS[sec].cards.find(x => x.id === cid);
-    if (c) return { type:"vocab", id:c.id, sec, cat:c.cat, front:c.term, back:c.def, reversed:false };
+    if (c) return { type:"vocab", id:c.id, sec, cat:c.cat, front:c.term, back:c.def, reversed:false, full:c.full||[] };
   }
   return null;
 }
@@ -2427,9 +2435,13 @@ function renderIndex() {
         ? `<button class="idx-card-btn" data-cid="${it.cid}">📇</button>`
         : "";
       const secBadge = it.s ? `<span class="idx-sec">${escapeHtml(it.s)}</span>` : "";
+      const fullHtml = (it.full && it.full.length)
+        ? `<div class="idx-full">${it.full.map(f=>`<span class="idx-abbr">${escapeHtml(f.a)}</span> = ${escapeHtml(f.e)}`).join("　")}</div>`
+        : "";
       return `<div class="idx-row">
         <div class="idx-main">
           <div class="idx-term">${highlightQ(it.t, q)}${secBadge}</div>
+          ${fullHtml}
           <div class="idx-mean">${highlightQ(it.m, q)}</div>
         </div>
         ${link}
