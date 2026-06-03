@@ -2406,12 +2406,55 @@ function startIndexCard(cid) {
   renderFlashCard();
 }
 
+// シェル（検索欄）は一度だけ構築し、入力欄はIME変換中に作り直さない。
+// 結果リストだけ renderIndexResults() で差し替える。
 function renderIndex() {
   const v = document.getElementById("view-index");
   if (typeof INDEX_ITEMS === "undefined") {
     v.innerHTML = '<div class="empty-msg">索引データ(flashcard_data.js)が読み込めません。</div>';
     return;
   }
+  v.innerHTML = `
+    <div class="idx-search-wrap">
+      <input type="search" id="idxSearch" class="idx-search" placeholder="🔍 用語・意味・章で検索（例: VPC, 暗号化, 1-2）" value="${escapeHtml(_indexQuery)}" autocomplete="off" autocapitalize="off" autocorrect="off">
+      <button class="idx-clear" id="idxClear" style="${_indexQuery?'':'display:none'}">✕</button>
+    </div>
+    <div class="idx-count" id="idxCount"></div>
+    <div id="idxResults"></div>
+  `;
+
+  const inp = document.getElementById("idxSearch");
+  let composing = false;   // IME変換中フラグ
+  inp.addEventListener("compositionstart", () => { composing = true; });
+  inp.addEventListener("compositionend", () => {
+    composing = false;
+    _indexQuery = inp.value;
+    renderIndexResults();   // 変換確定時にだけフィルタ更新
+  });
+  inp.addEventListener("input", () => {
+    _indexQuery = inp.value;
+    if (composing) return;  // 変換中はDOMを触らない（フリック入力の破壊を防ぐ）
+    renderIndexResults();
+  });
+
+  const clr = document.getElementById("idxClear");
+  clr.addEventListener("click", () => {
+    _indexQuery = "";
+    inp.value = "";
+    inp.focus();
+    renderIndexResults();
+  });
+
+  renderIndexResults();
+}
+
+// 結果リスト＋件数だけを更新（検索欄には触れない）
+function renderIndexResults() {
+  const resEl   = document.getElementById("idxResults");
+  const countEl = document.getElementById("idxCount");
+  const clr     = document.getElementById("idxClear");
+  if (!resEl) return;
+
   const q = _indexQuery.trim().toLowerCase();
   const norm = s => (s||"").toLowerCase().replace(/[Ａ-Ｚａ-ｚ０-９]/g, c=>String.fromCharCode(c.charCodeAt(0)-0xFEE0));
   const nq = norm(q);
@@ -2419,50 +2462,30 @@ function renderIndex() {
     norm(it.t).includes(nq) || norm(it.m).includes(nq) || norm(it.s).includes(nq)
   );
 
-  let html = `
-    <div class="idx-search-wrap">
-      <input type="search" id="idxSearch" class="idx-search" placeholder="🔍 用語・意味・章で検索（例: VPC, 暗号化, 1-2）" value="${escapeHtml(_indexQuery)}" autocomplete="off">
-      ${_indexQuery ? `<button class="idx-clear" id="idxClear">✕</button>` : ""}
-    </div>
-    <div class="idx-count">全${INDEX_ITEMS.length}語${nq?` 中 ${filtered.length}件ヒット`:""}</div>
-  `;
+  if (clr) clr.style.display = _indexQuery ? "" : "none";
+  if (countEl) countEl.textContent = `全${INDEX_ITEMS.length}語${nq?` 中 ${filtered.length}件ヒット`:""}`;
 
   if (!filtered.length) {
-    html += `<div class="empty-msg">「${escapeHtml(_indexQuery)}」に一致する用語がありません</div>`;
-  } else {
-    html += filtered.map(it => {
-      const link = it.cid
-        ? `<button class="idx-card-btn" data-cid="${it.cid}">📇</button>`
-        : "";
-      const secBadge = it.s ? `<span class="idx-sec">${escapeHtml(it.s)}</span>` : "";
-      const fullHtml = (it.full && it.full.length)
-        ? `<div class="idx-full">${it.full.map(f=>`<span class="idx-abbr">${escapeHtml(f.a)}</span> = ${escapeHtml(f.e)}`).join("　")}</div>`
-        : "";
-      return `<div class="idx-row">
-        <div class="idx-main">
-          <div class="idx-term">${highlightQ(it.t, q)}${secBadge}</div>
-          ${fullHtml}
-          <div class="idx-mean">${highlightQ(it.m, q)}</div>
-        </div>
-        ${link}
-      </div>`;
-    }).join("");
+    resEl.innerHTML = `<div class="empty-msg">「${escapeHtml(_indexQuery)}」に一致する用語がありません</div>`;
+    return;
   }
+  resEl.innerHTML = filtered.map(it => {
+    const link = it.cid ? `<button class="idx-card-btn" data-cid="${it.cid}">📇</button>` : "";
+    const secBadge = it.s ? `<span class="idx-sec">${escapeHtml(it.s)}</span>` : "";
+    const fullHtml = (it.full && it.full.length)
+      ? `<div class="idx-full">${it.full.map(f=>`<span class="idx-abbr">${escapeHtml(f.a)}</span> = ${escapeHtml(f.e)}`).join("　")}</div>`
+      : "";
+    return `<div class="idx-row">
+      <div class="idx-main">
+        <div class="idx-term">${highlightQ(it.t, q)}${secBadge}</div>
+        ${fullHtml}
+        <div class="idx-mean">${highlightQ(it.m, q)}</div>
+      </div>
+      ${link}
+    </div>`;
+  }).join("");
 
-  v.innerHTML = html;
-
-  const inp = document.getElementById("idxSearch");
-  inp.addEventListener("input", () => {
-    _indexQuery = inp.value;
-    const pos = inp.selectionStart;
-    renderIndex();
-    const ni = document.getElementById("idxSearch");
-    ni.focus();
-    try { ni.setSelectionRange(pos, pos); } catch(e){}
-  });
-  const clr = document.getElementById("idxClear");
-  if (clr) clr.addEventListener("click", () => { _indexQuery = ""; renderIndex(); document.getElementById("idxSearch").focus(); });
-  v.querySelectorAll(".idx-card-btn").forEach(btn => {
+  resEl.querySelectorAll(".idx-card-btn").forEach(btn => {
     btn.addEventListener("click", () => startIndexCard(btn.getAttribute("data-cid")));
   });
 }
