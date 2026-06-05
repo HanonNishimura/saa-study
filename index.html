@@ -867,7 +867,7 @@ main { padding: 12px 12px 20px; }
 
 <header>
   <div class="title">AWS SAA-C03 合格への道</div>
-  <div class="subtitle">5/20 → 6/10 試験日</div>
+  <div class="subtitle">→ 6/24 試験日</div>
   <div class="stats-row">
     <div class="stat">
       <div class="stat-label">試験まで</div>
@@ -1007,86 +1007,119 @@ const SCHEDULE = [
     ], memo:"今夜は新範囲NG・模試①の徹底復習に集中。4・5章は6/5に延期。" },
   { date:"5/31", dow:"日", shift:"C勤", shiftClass:"", workTime:"09:00〜21:30", targetHours:1,
     tasks:[], memo:"通勤の隙間でPing-t：VPC/自動化/Auto Scalingを優先" },
-  { date:"6/1", dow:"月", shift:"B勤", shiftClass:"", workTime:"12:30〜21:30", targetHours:3,
+  // ===== ここから 6/24 試験に向けた新スケジュール（無理のないペース）=====
+  { date:"6/1", dow:"月", shift:"B勤", shiftClass:"", workTime:"12:30〜21:30", targetHours:1.5,
     tasks:[
-      {id:"p1_12", label:"【弱点①】1-2 ネットワーク 要点・用語を復習"},
-      {id:"p1_23", label:"【弱点①】2-3 ネットワークセキュリティ 復習"},
-      {id:"p1_q12", label:"教材タブ: 1-2 確認テスト"},
-      {id:"p1_q23", label:"教材タブ: 2-3 確認テスト"}
-    ], memo:"午前中3h・VPC/SG/NACL/Endpoint/Direct Connectを徹底" },
-  { date:"6/2", dow:"火", shift:"B勤", shiftClass:"", workTime:"12:30〜21:30", targetHours:3,
+      {id:"n0601_1", label:"【弱点①】1-2 ネットワーク 確認テスト（教材タブ）"},
+      {id:"n0601_2", label:"単語帳: 1-2 VPC/SG/NACL/Route53（用語＋図解虫食い）"}
+    ], memo:"午前1.5h・無理せず弱点1-2に集中" },
+  { date:"6/2", dow:"火", shift:"B勤", shiftClass:"", workTime:"12:30〜21:30", targetHours:1.5,
     tasks:[
-      {id:"p2_18", label:"【弱点②】1-8 CloudFormation/CodeDeploy/CodePipeline 要点復習"},
-      {id:"p2_s3cf", label:"【弱点③】S3(1-5) と CloudFront/GA(1-2) の違いをメモに言語化"},
-      {id:"p2_q18", label:"教材タブ: 1-8 確認テスト"},
-      {id:"p2_q15", label:"教材タブ: 1-5 確認テスト"}
-    ], memo:"午前中3h・自動化の整理＋S3⇔CloudFrontの使い分けを区別" },
-  { date:"6/3", dow:"水", shift:"★集中日①", shiftClass:"off", workTime:"8:00〜23:00", targetHours:11,
+      {id:"n0602_1", label:"【弱点②】1-7 疎結合 SQS/SNS/Kinesis 確認テスト"},
+      {id:"n0602_2", label:"単語帳: 1-7（用語）＋「直接呼ばずキューを挟む」型を意識"}
+    ], memo:"午前1.5h・疎結合パターンが最大の弱点" },
+  { date:"6/3", dow:"水", shift:"休み", shiftClass:"off", workTime:"終日勉強可", targetHours:4,
     tasks:[
-      {id:"c3_ch4",    label:"[3ポモ]  8:00〜10:35 ▶ 4-1〜4-5 パフォーマンス全範囲 通読"},
-      {id:"c3_ch5",    label:"[3ポモ] 10:45〜13:20 ▶ 5-1〜5-4 コスト最適化全範囲 通読 ← 参考書 完全読了！"},
-      {id:"c3_lunch",  label:"🍽 昼食  13:20〜13:50（30分）"},
-      {id:"c3_mockA",  label:"[模試]  13:50〜16:00 ▶ 学習模試A 本番（130分・ポモなし）"},
-      {id:"c3_mockArv",label:"[2ポモ] 16:10〜17:50 ▶ 学習模試A 間違い全問 解説精読"},
-      {id:"c3_dinner", label:"🍽 夕食  17:50〜18:50（60分）"},
-      {id:"c3_vpc",    label:"[2ポモ] 18:50〜20:30 ▶ 弱点① VPC/NW 1-2＋2-3 要点精読"},
-      {id:"c3_sec",    label:"[2ポモ] 20:40〜22:20 ▶ 弱点② セキュリティ 2-1〜2-5 各サービス役割 音読で暗記"}
-    ], memo:"★12ポモ+模試130分（実質11h）食事: 昼30分・夕60分。模試中はポモなし本番形式。バッファ約40分あり。" },
-  { date:"6/4", dow:"木", shift:"★集中日②", shiftClass:"off", workTime:"7:00〜23:00", targetHours:13,
+      {id:"n0603_m3", label:"模試③ 受験（本番形式・130分・時間計測）目標50%"},
+      {id:"n0603_rv", label:"模試③ 間違い全問の解説精読（章→Q対応で弱点記録）"}
+    ], memo:"4h・午前に模試③→午後に間違い復習。受験中の続きはここで完了" },
+  { date:"6/4", dow:"木", shift:"A勤", shiftClass:"", workTime:"8:30〜17:30", targetHours:2,
     tasks:[
-      {id:"c4_cfn",    label:"[2ポモ]  7:00〜 8:40 ▶ 弱点③ 1-8 CloudFormation/自動化 精読"},
-      {id:"c4_las",    label:"[2ポモ]  8:45〜10:25 ▶ 弱点④ Lambda(1-4)＋Auto Scaling(3-3) 精読"},
-      {id:"c4_bfast",  label:"☕ 朝食バッファ  10:25〜10:55（30分）"},
-      {id:"c4_mockB",  label:"[模試]  10:55〜13:05 ▶ 学習模試B 本番（130分・ポモなし）"},
-      {id:"c4_lunch",  label:"🍽 昼食  13:05〜13:35（30分）"},
-      {id:"c4_mockBrv",label:"[2ポモ] 13:35〜15:15 ▶ 学習模試B 間違い全問 解説精読"},
-      {id:"c4_mockC",  label:"[模試]  15:20〜17:30 ▶ 学習模試C 本番（130分・ポモなし）"},
-      {id:"c4_mockCrv",label:"[2ポモ] 17:35〜19:15 ▶ 学習模試C 間違い全問 解説精読"},
-      {id:"c4_rematch",label:"[3ポモ] 19:20〜21:55 ▶ 模試A・B・C 間違い問題 全部再演習 ★最重要"},
-      {id:"c4_summary",label:"[1ポモ] 22:00〜22:45 ▶ 重要サービス比較まとめ暗記 VPC/SG/NACL/ELB/AS"}
-    ], memo:"★10ポモ+模試2本（実質13h）食事: 朝30分・昼30分。7時スタート→22:45終了。模試中はポモなし本番形式。" },
-  { date:"6/5", dow:"金", shift:"★集中日③", shiftClass:"off", workTime:"7:00〜18:00", targetHours:9,
+      {id:"n0604_1", label:"模試③で間違えた問題の再演習（なぜ正解か声に出す）"},
+      {id:"n0604_2", label:"単語帳: 間違いに出たサービスを索引で確認"}
+    ], memo:"夕方2h・模試③の取りこぼしを潰す" },
+  { date:"6/5", dow:"金", shift:"休み", shiftClass:"off", workTime:"終日勉強可", targetHours:4,
     tasks:[
-      {id:"c5_check",  label:"[2ポモ]  7:00〜 8:40 ▶ 弱点最終確認 VPC・自動化・セキュリティ キーワード一覧"},
-      {id:"t605_m3",   label:"[模試]   8:45〜10:55 ▶ 実力模試① 本番形式・時間計測（130分・ポモなし）"},
-      {id:"c5_lunch",  label:"🍽 昼食  10:55〜11:25（30分）"},
-      {id:"c5_rv",     label:"[2ポモ] 11:25〜13:05 ▶ 実力模試① 間違い全問 解説精読"},
-      {id:"c5_rematch",label:"[2ポモ] 13:10〜14:50 ▶ 間違い問題 再演習"},
-      {id:"c5_vocab",  label:"[2ポモ] 14:55〜16:35 ▶ 単語帳で弱点最終確認"},
-      {id:"c5_prep",   label:"[1ポモ] 16:40〜17:25 ▶ 6/6に向けた重要サービス総まとめ"}
-    ], memo:"★9ポモ+模試130分（実質9h）7時スタート→17:25終了。目標65%以上。バッファ約35分。※18時以降は予定あり" },
-  { date:"6/6", dow:"土", shift:"夜勤1日目", shiftClass:"night1", workTime:"21:00〜33:30", targetHours:3,
+      {id:"n0605_1", label:"【弱点③】1-4 コンピュート(EC2/AutoScaling/ECS) 確認テスト＋単語帳"},
+      {id:"n0605_2", label:"【弱点④】1-3 IAM（ロール/リソースポリシー）確認テスト＋単語帳"},
+      {id:"n0605_3", label:"図解虫食い: EC2購入オプション/AutoScaling/IAM構成"}
+    ], memo:"4h・弱点1巡目（1-4/1-3）。図解で型を固める" },
+  { date:"6/6", dow:"土", shift:"夜勤1日目", shiftClass:"night1", workTime:"21:00〜33:30", targetHours:1,
     tasks:[
-      {id:"t606_m4", label:"夕方まで ▶ 実力模試② 本番形式・時間計測あり（目標65〜70%）"},
-      {id:"p6_summary", label:"実力模試② 間違い全問 解説確認"},
-      {id:"t606_3", label:"夜勤隙間: Black Belt：IAM / CloudFront"}
-    ], memo:"夕方まで3h: 実力模試②→間違い確認。夜勤前は無理しない" },
-  { date:"6/7", dow:"日", shift:"夜勤2日目前", shiftClass:"night2pre", workTime:"21:00〜33:30", targetHours:0,
-    tasks:[{id:"t607_1", label:"絶対に休む（勉強NG・睡眠優先）"}], memo:"" },
-  { date:"6/8", dow:"月", shift:"夜勤明け", shiftClass:"nightafter", workTime:"〜16時帰宅", targetHours:1.5,
+      {id:"n0606_1", label:"隙間Ping-t（寝ながらOK）VPC/IAMを軽く"}
+    ], memo:"夜勤・無理しない。隙間1hだけ" },
+  { date:"6/7", dow:"日", shift:"夜勤2日目", shiftClass:"night1", workTime:"21:00〜33:30", targetHours:0,
+    tasks:[{id:"n0607_1", label:"勉強NG・睡眠優先（連続夜勤なので休む）"}], memo:"完全休養" },
+  { date:"6/8", dow:"月", shift:"夜勤明け(休)", shiftClass:"nightafter", workTime:"〜9:30帰宅", targetHours:1.5,
     tasks:[
-      {id:"t608_1", label:"実力模試②の復習（なぜこの選択肢かを声に出す）"},
-      {id:"t608_2", label:"苦手分野の最終確認（新範囲NG）"}
-    ], memo:"16時帰宅→16〜17:30のみ" },
+      {id:"n0608_1", label:"軽め: 単語帳・索引で弱点用語を眺める（新範囲NG）"}
+    ], memo:"夜勤明け・回復優先。午後に軽く1.5h" },
   { date:"6/9", dow:"火", shift:"休み", shiftClass:"off", workTime:"終日勉強可", targetHours:4,
     tasks:[
-      {id:"t609_1", label:"苦手ポイント最終確認（新範囲NG）"},
-      {id:"c9_m3", label:"実力模試③ 本番形式・時間計測（目標72%以上）"},
-      {id:"t609_2", label:"実力模試③ 間違いのみ確認→21時就寝厳守"}
-    ], memo:"早寝厳守・新範囲NG" },
-  { date:"6/10", dow:"水", shift:"試験日", shiftClass:"exam", workTime:"-", targetHours:0.5,
+      {id:"n0609_m4", label:"模試④ 受験（本番形式・130分）目標58%"},
+      {id:"n0609_rv", label:"模試④ 間違い全問の解説精読"}
+    ], memo:"4h・模試④で伸びを確認" },
+  { date:"6/10", dow:"水", shift:"休み", shiftClass:"off", workTime:"終日勉強可", targetHours:4,
     tasks:[
-      {id:"t610_1", label:"朝：重要サービスをさらっと眺める"},
-      {id:"t610_2", label:"本番試験：720点以上"}
-    ], memo:"体調最優先！食事・水分しっかり" }
+      {id:"n0610_1", label:"模試④で間違えた問題の再演習"},
+      {id:"n0610_2", label:"【弱点⑤】1-5 ストレージ(S3)＋1-6 DB(RDS/Aurora/DynamoDB) 確認テスト"}
+    ], memo:"4h・模試④復習＋弱点(1-5/1-6)" },
+  { date:"6/11", dow:"木", shift:"夜勤1日目", shiftClass:"night1", workTime:"21:00〜33:30", targetHours:1,
+    tasks:[
+      {id:"n0611_1", label:"隙間Ping-t（寝ながらOK）S3/RDS/DynamoDB"}
+    ], memo:"夜勤・隙間1hだけ" },
+  { date:"6/12", dow:"金", shift:"夜勤2日目", shiftClass:"night1", workTime:"21:00〜33:30", targetHours:0,
+    tasks:[{id:"n0612_1", label:"勉強NG・睡眠優先"}], memo:"完全休養" },
+  { date:"6/13", dow:"土", shift:"夜勤明け(休)", shiftClass:"nightafter", workTime:"〜9:30帰宅", targetHours:1.5,
+    tasks:[
+      {id:"n0613_1", label:"軽め: 図解虫食い（VPC/ELB/RDS Multi-AZ）"}
+    ], memo:"夜勤明け・回復優先。軽く1.5h" },
+  { date:"6/14", dow:"日", shift:"休み", shiftClass:"off", workTime:"終日勉強可", targetHours:4,
+    tasks:[
+      {id:"n0614_m5", label:"模試⑤ 受験（本番形式・130分）目標65%"},
+      {id:"n0614_rv", label:"模試⑤ 間違い全問の解説精読＋再演習"}
+    ], memo:"4h・模試⑤。合格ラインが見えてくると理想" },
+  { date:"6/15", dow:"月", shift:"A勤", shiftClass:"", workTime:"8:30〜17:30", targetHours:2,
+    tasks:[
+      {id:"n0615_1", label:"4章 パフォーマンス(4-1〜4-5) 教材タブで通読＋確認テスト"}
+    ], memo:"夕方2h・4章は軽くキーワード把握でOK" },
+  { date:"6/16", dow:"火", shift:"A勤", shiftClass:"", workTime:"8:30〜17:30", targetHours:2,
+    tasks:[
+      {id:"n0616_1", label:"5章 コスト最適化(5-1〜5-4) 教材タブで通読＋確認テスト"}
+    ], memo:"夕方2h・5章も軽く。これで全章カバー" },
+  { date:"6/17", dow:"水", shift:"B勤", shiftClass:"", workTime:"12:30〜21:30", targetHours:1.5,
+    tasks:[
+      {id:"n0617_1", label:"弱点2巡: 1-2/2-3（SG vs NACL の違いを完璧に）確認テスト"}
+    ], memo:"午前1.5h・ステートフル/ステートレスを暗記" },
+  { date:"6/18", dow:"木", shift:"B勤", shiftClass:"", workTime:"12:30〜21:30", targetHours:1.5,
+    tasks:[
+      {id:"n0618_1", label:"弱点2巡: 1-7/1-4（疎結合・スケーリング）確認テスト"}
+    ], memo:"午前1.5h・1巡目で弱かった所を再演習" },
+  { date:"6/19", dow:"金", shift:"B勤", shiftClass:"", workTime:"12:30〜21:30", targetHours:1.5,
+    tasks:[
+      {id:"n0619_1", label:"単語帳 総ざらい＋索引で曖昧な用語を確認"}
+    ], memo:"午前1.5h・知識の穴埋め" },
+  { date:"6/20", dow:"土", shift:"休み", shiftClass:"off", workTime:"終日勉強可", targetHours:4,
+    tasks:[
+      {id:"n0620_m6", label:"模試⑥ 受験（本番形式・130分）目標70%"},
+      {id:"n0620_rv", label:"模試⑥ 間違い全問の解説精読＋再演習（総仕上げ）"}
+    ], memo:"4h・最後の本番形式模試。仕上がりを確認" },
+  { date:"6/21", dow:"日", shift:"夜勤1日目", shiftClass:"night1", workTime:"21:00〜33:30", targetHours:1,
+    tasks:[
+      {id:"n0621_1", label:"隙間Ping-t（寝ながらOK）苦手分野だけ軽く"}
+    ], memo:"夜勤・隙間1hだけ・無理しない" },
+  { date:"6/22", dow:"月", shift:"夜勤2日目", shiftClass:"night1", workTime:"21:00〜33:30", targetHours:0,
+    tasks:[{id:"n0622_1", label:"勉強NG・睡眠優先（試験2日前・体調最優先）"}], memo:"完全休養・体調を整える" },
+  { date:"6/23", dow:"火", shift:"夜勤明け(休)", shiftClass:"nightafter", workTime:"〜9:30帰宅", targetHours:2,
+    tasks:[
+      {id:"n0623_1", label:"試験前日: 間違いノート・重要サービス比較を総ざらい（新範囲NG）"},
+      {id:"n0623_2", label:"21時には就寝（早寝厳守・睡眠が一番の対策）"}
+    ], memo:"前日・軽く2hのみ。新しいことはやらない。早寝厳守" },
+  { date:"6/24", dow:"水", shift:"試験日", shiftClass:"exam", workTime:"-", targetHours:0.5,
+    tasks:[
+      {id:"n0624_1", label:"朝：重要サービス（VPC/IAM/S3/疎結合）をさらっと眺める"},
+      {id:"n0624_2", label:"本番試験：720点以上！体調・水分・落ち着いて"}
+    ], memo:"体調最優先！食事・水分しっかり。落ち着いていけば大丈夫" }
 ];
 
 const EXAMS = [
-  { id:"mock1", name:"模擬試験① (5/30)", target:"60〜70%（実績32%）" },
-  { id:"mock2", name:"実力模試① (6/5)",  target:"65%以上" },
-  { id:"mock3", name:"実力模試② (6/6)",  target:"65〜70%" },
-  { id:"mock4", name:"実力模試③ (6/9)",  target:"72%以上" },
-  { id:"main",  name:"本番試験 (6/10)",  target:"720/1000点以上" }
+  { id:"mock1", name:"模擬試験① (5/30)", target:"実績32%" },
+  { id:"mock2", name:"模擬試験② ",      target:"実績(記録)" },
+  { id:"mock3", name:"模試③ (6/3)",     target:"目標50%" },
+  { id:"mock4", name:"模試④ (6/9)",     target:"目標58%" },
+  { id:"mock5", name:"模試⑤ (6/14)",    target:"目標65%" },
+  { id:"mock6", name:"模試⑥ (6/20)",    target:"目標70%" },
+  { id:"main",  name:"本番試験 (6/24)",  target:"720/1000点以上" }
 ];
 
 const PRIORITY = [
@@ -1345,7 +1378,7 @@ function bindDeckControls(root) {
   });
 }
 
-const EXAM_DATE = new Date(2026, 5, 10); // 6/10
+const EXAM_DATE = new Date(2026, 5, 24); // 6/24
 const STORAGE_KEY = "saa_study_v1";
 
 // ===== State =====
@@ -2565,7 +2598,10 @@ function renderExam() {
       } else {
         let threshold = 70;
         if (ex.id === "mock1") threshold = 60;
-        if (ex.id === "mock4") threshold = 72;
+        if (ex.id === "mock3") threshold = 50;
+        if (ex.id === "mock4") threshold = 58;
+        if (ex.id === "mock5") threshold = 65;
+        if (ex.id === "mock6") threshold = 70;
         if (sc >= threshold) badge = '<span class="score-badge pass">達</span>';
         else if (sc >= threshold - 10) badge = '<span class="score-badge near">近</span>';
         else badge = '<span class="score-badge fail">要</span>';
@@ -2586,10 +2622,10 @@ function renderExam() {
   html += `<div class="stat-card">
     <h3>直前週の心得</h3>
     <div style="font-size:13px; line-height:1.7">
-      <div>・<b>6/7 夜勤2日目前</b>：絶対に休む（勉強NG）</div>
-      <div>・<b>6/8 夜勤明け</b>：模擬④の復習のみ・新範囲NG</div>
-      <div>・<b>6/9 前日</b>：苦手箇所のみ・21時就寝厳守</div>
-      <div>・<b>6/10 試験日</b>：体調最優先・食事と水分</div>
+      <div>・<b>6/20 土(休)</b>：最後の本番形式模試⑥で仕上がり確認</div>
+      <div>・<b>6/21-22 夜勤</b>：無理しない・睡眠優先（体調最優先）</div>
+      <div>・<b>6/23 前日(夜勤明け)</b>：間違い総ざらいのみ・新範囲NG・21時就寝</div>
+      <div>・<b>6/24 試験日</b>：朝に重要サービス確認・体調最優先・食事と水分</div>
     </div>
   </div>`;
 
@@ -2636,7 +2672,7 @@ function renderSettings() {
     <div class="stat-card">
       <h3>About</h3>
       <div style="font-size:12px; color:var(--muted)">AWS SAA-C03 学習管理ツール v1.1</div>
-      <div style="font-size:12px; color:var(--muted)">期間: 2026/5/20 - 2026/6/10</div>
+      <div style="font-size:12px; color:var(--muted)">試験日: 2026/6/24</div>
     </div>
   `;
   document.getElementById("btn-export").addEventListener("click", exportData);
@@ -2756,50 +2792,22 @@ function renderAll() {
 
 // ===== Day Plans（全日タイムライン）=====
 // type: "study"(ポモ), "mock"(模試本番130分・ポモなし), "meal", "break"
+// 模試がある休みの日(4h)のゆるいタイムライン。午前に模試→午後に復習。
+const _MOCK_DAY = (label, mockName) => ({
+  label, limitH: 18, limitM: 0,
+  blocks: [
+    { type:"mock",  label:`📝 ${mockName} 本番（130分・ポモなし・時間計測）`, min:130, startH:9,  startM:30 },
+    { type:"break", label:"☕ 休憩",                                          min:20,  startH:11, startM:40 },
+    { type:"study", label:"間違い全問 解説精読（章→Q対応で弱点記録）",         pomos:2, startH:12, startM:0  },
+    { type:"meal",  label:"🍽 昼食",                                          min:45,  startH:13, startM:40 },
+    { type:"study", label:"間違い問題 再演習（なぜ正解か声に出す）",           pomos:1, startH:14, startM:25 }
+  ]
+});
 const DAY_PLANS = {
-  "6/3": {
-    label: "★集中日① 6/3（8:00〜23:00）",
-    limitH: 23, limitM: 0,
-    blocks: [
-      { type:"study", label:"4章通読（パフォーマンス）",               pomos:3, startH:8,  startM:0  },
-      { type:"study", label:"5章通読（コスト最適化）← 参考書完全読了！", pomos:3, startH:10, startM:45 },
-      { type:"meal",  label:"🍽 昼食",                                  min:30,  startH:13, startM:20 },
-      { type:"mock",  label:"📝 学習模試A 本番（ポモなし）",            min:130, startH:13, startM:50 },
-      { type:"study", label:"学習模試A 間違い全問 解説精読",             pomos:2, startH:16, startM:10 },
-      { type:"meal",  label:"🍽 夕食",                                  min:60,  startH:17, startM:50 },
-      { type:"study", label:"弱点① VPC/NW（1-2＋2-3）精読",          pomos:2, startH:18, startM:50 },
-      { type:"study", label:"弱点② セキュリティ（2-1〜2-5）音読暗記", pomos:2, startH:20, startM:40 }
-    ]
-  },
-  "6/4": {
-    label: "★集中日② 6/4（7:00〜23:00）",
-    limitH: 23, limitM: 0,
-    blocks: [
-      { type:"study", label:"弱点③ CloudFormation/自動化（1-8）精読",    pomos:2, startH:7,  startM:0  },
-      { type:"study", label:"弱点④ Lambda(1-4)＋Auto Scaling(3-3)精読", pomos:2, startH:8,  startM:45 },
-      { type:"break", label:"☕ 朝食バッファ",                             min:30,  startH:10, startM:25 },
-      { type:"mock",  label:"📝 学習模試B 本番（ポモなし）",              min:130, startH:10, startM:55 },
-      { type:"meal",  label:"🍽 昼食",                                    min:30,  startH:13, startM:5  },
-      { type:"study", label:"学習模試B 間違い全問 解説精読",               pomos:2, startH:13, startM:35 },
-      { type:"mock",  label:"📝 学習模試C 本番（ポモなし）",              min:130, startH:15, startM:20 },
-      { type:"study", label:"学習模試C 間違い全問 解説精読",               pomos:2, startH:17, startM:35 },
-      { type:"study", label:"★ 模試A・B・C 間違い問題 全部再演習",       pomos:3, startH:19, startM:20 },
-      { type:"study", label:"重要サービス比較まとめ暗記",                  pomos:1, startH:22, startM:0  }
-    ]
-  },
-  "6/5": {
-    label: "★集中日③ 6/5（7:00〜18:00）",
-    limitH: 18, limitM: 0,
-    blocks: [
-      { type:"study", label:"弱点最終確認 キーワード一覧",              pomos:2, startH:7,  startM:0  },
-      { type:"mock",  label:"📝 実力模試① 本番（ポモなし）",           min:130, startH:8,  startM:45 },
-      { type:"meal",  label:"🍽 昼食",                                 min:30,  startH:10, startM:55 },
-      { type:"study", label:"実力模試① 間違い全問 解説精読",            pomos:2, startH:11, startM:25 },
-      { type:"study", label:"★ 間違い問題 再演習",                     pomos:2, startH:13, startM:10 },
-      { type:"study", label:"単語帳で弱点最終確認",                     pomos:2, startH:14, startM:55 },
-      { type:"study", label:"6/6に向けた重要サービス総まとめ",          pomos:1, startH:16, startM:40 }
-    ]
-  }
+  "6/3":  _MOCK_DAY("模試③の日 6/3（休・約4h）",  "模試③"),
+  "6/9":  _MOCK_DAY("模試④の日 6/9（休・約4h）",  "模試④"),
+  "6/14": _MOCK_DAY("模試⑤の日 6/14（休・約4h）", "模試⑤"),
+  "6/20": _MOCK_DAY("模試⑥の日 6/20（休・約4h）", "模試⑥")
 };
 
 function pomBlockDur(b) {
