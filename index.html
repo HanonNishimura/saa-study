@@ -447,6 +447,14 @@ main { padding: 12px 12px 20px; }
 .note-input:focus { outline: none; border-color: var(--accent); }
 
 .memo-hint { font-size: 11px; color: var(--muted); margin-top: 6px; font-style: italic; }
+.day-goal {
+  font-size: 12px; line-height: 1.6; color: var(--text);
+  background: rgba(244,123,39,0.08);
+  border-left: 3px solid var(--accent);
+  border-radius: 0 8px 8px 0;
+  padding: 7px 10px; margin: 8px 0 2px;
+  white-space: pre-line;
+}
 
 /* ===== Stats view ===== */
 .stat-card {
@@ -948,177 +956,101 @@ main { padding: 12px 12px 20px; }
 <script src="flashcard_data.js"></script>
 <script>
 // ===== Schedule data =====
+// 6/12整理: 5/20〜6/11の過去日はリストから削除した。
+// チェック済み実績はlocalStorageに残っているため、ヘッダーの累計カウント用にIDと目標時間だけ保持する。
+const PAST_TASK_IDS = [
+  "sec_11","sec_12","t520_3","t521_1","sec_13","sec_14","sec_15","sec_16","sec_17",
+  "sec_18","sec_21","sec_22","sec_23","sec_24","sec_25",
+  "sec_31","sec_32","sec_33","sec_34","t527_4","t528_1","sec_35","sec_41","sec_42",
+  "t530_5","m1_rv","m1_voice","m1_memo",
+  "n0601_1","n0601_2","n0602_1","n0602_2","n0603_m3","n0603_rv","n0604_1","n0604_2",
+  "n0605_1","n0605_2","n0605_3","n0606_1","n0607_1","n0608_1","n0609_m4","n0609_rv",
+  "n0610_1","n0610_2","n0611_1"
+];
+const PAST_TARGET_HOURS = 59.5; // 削除した過去日(5/20〜6/11)の目標時間合計
+
 const SCHEDULE = [
-  { date:"5/20", dow:"水", shift:"夜勤1日目", shiftClass:"night1", workTime:"21:00〜33:30", targetHours:4,
-    tasks:[
-      {id:"sec_11", label:"1-1 Well-Architectedフレームワーク (p.12)"},
-      {id:"sec_12", label:"1-2 ネットワークサービス ★VPC/Route53/CloudFront (p.16)"},
-      {id:"t520_3", label:"夜勤隙間: Black Belt：VPC"}
-    ], memo:"完了済み(1-1・1-2)→チェックを入れて記録。" },
-  { date:"5/21", dow:"木", shift:"夜勤2日目前", shiftClass:"night2pre", workTime:"21:00〜33:30", targetHours:0,
-    tasks:[{id:"t521_1", label:"勉強NG・睡眠優先（しっかり休む）"}], memo:"" },
-  { date:"5/22", dow:"金", shift:"夜勤明け", shiftClass:"nightafter", workTime:"〜16時帰宅", targetHours:2,
-    tasks:[
-      {id:"sec_13", label:"1-3 アクセス制御サービス (p.38)"}
-    ], memo:"完了済み(1-3)→チェックを入れて記録。" },
-  { date:"5/23", dow:"土", shift:"休み", shiftClass:"off", workTime:"今日は4hのみ", targetHours:4,
-    tasks:[
-      {id:"sec_14", label:"1-4 コンピューティングサービス ★EC2 (p.43)"},
-      {id:"sec_15", label:"1-5 ストレージサービス ★S3/EBS/EFS (p.71)"}
-    ], memo:"今日は4hなので最優先のEC2(1-4)・S3(1-5)に集中(計47p)。" },
-  { date:"5/24", dow:"日", shift:"C勤", shiftClass:"", workTime:"09:00〜21:30", targetHours:1,
-    tasks:[], memo:"持込不可・通勤の隙間時間でデッキを進める" },
-  { date:"5/25", dow:"月", shift:"B勤", shiftClass:"", workTime:"12:30〜21:30", targetHours:3,
-    tasks:[
-      {id:"sec_16", label:"1-6 データベースサービス ★RDS/Aurora/DynamoDB (p.90)"},
-      {id:"sec_17", label:"1-7 データ処理・分析サービス (p.119)"}
-    ], memo:"午前中に集中(3h)。最優先のRDS/Aurora(1-6)を攻略。" },
-  { date:"5/26", dow:"火", shift:"休み", shiftClass:"off", workTime:"終日勉強可", targetHours:7,
-    tasks:[
-      {id:"sec_18", label:"1-8 構成管理・開発サービス ★SNS/SQS (p.129)"},
-      {id:"sec_21", label:"2-1 セキュリティ設計の考え方 (p.150)"},
-      {id:"sec_22", label:"2-2 アイデンティティ管理とアクセス管理 ★IAM (p.155)"},
-      {id:"sec_23", label:"2-3 ネットワークセキュリティ (p.171)"},
-      {id:"sec_24", label:"2-4 データの保護 (p.184)"},
-      {id:"sec_25", label:"2-5 セキュリティ監視 (p.195)"}
-    ], memo:"終日7h。最優先のIAM(2-2)含む。第1章を完結させ第2章を一気に読了。" },
-  { date:"5/27", dow:"水", shift:"夜勤1日目", shiftClass:"night1", workTime:"21:00〜33:30", targetHours:4,
-    tasks:[
-      {id:"sec_31", label:"3-1 高可用性の定義 (p.206)"},
-      {id:"sec_32", label:"3-2 ネットワークにおける高可用性 (p.212)"},
-      {id:"sec_33", label:"3-3 コンピューティングにおける高可用性 ★ELB/Auto Scaling (p.221)"},
-      {id:"sec_34", label:"3-4 ストレージにおける高可用性 (p.243)"},
-      {id:"t527_4", label:"夜勤隙間: Black Belt：S3"}
-    ], memo:"夜勤前に集中(4h)。最優先のELB/Auto Scaling(3-3)を含む第3章。" },
-  { date:"5/28", dow:"木", shift:"夜勤2日目前", shiftClass:"night2pre", workTime:"21:00〜33:30", targetHours:0,
-    tasks:[{id:"t528_1", label:"勉強NG・睡眠優先（しっかり休む）"}], memo:"" },
-  { date:"5/29", dow:"金", shift:"夜勤明け", shiftClass:"nightafter", workTime:"〜16時帰宅", targetHours:2,
-    tasks:[
-      {id:"sec_35", label:"3-5 データベースにおける高可用性 (p.254)"},
-      {id:"sec_41", label:"4-1 パフォーマンスの考え方 (p.262)"},
-      {id:"sec_42", label:"4-2 ネットワークのパフォーマンス (p.265)"}
-    ], memo:"16時帰宅→16〜18時のみ(2h)。第3章を締めて第4章へ。" },
-  { date:"5/30", dow:"土", shift:"休み", shiftClass:"off", workTime:"終日勉強可", targetHours:7,
-    tasks:[
-      {id:"t530_5", label:"模擬試験① 受験完了（32%／弱点：VPC・自動化・AS・セキュリティ）"},
-      {id:"m1_rv", label:"模試① 間違い44問の解説を全部読む"},
-      {id:"m1_voice", label:"0%分野(自動化/Auto Scaling/セキュリティ/コスト)の解説を音読"},
-      {id:"m1_memo", label:"弱点メモ作成（なぜ間違えたかを言語化）"}
-    ], memo:"今夜は新範囲NG・模試①の徹底復習に集中。4・5章は6/5に延期。" },
-  { date:"5/31", dow:"日", shift:"C勤", shiftClass:"", workTime:"09:00〜21:30", targetHours:1,
-    tasks:[], memo:"通勤の隙間でPing-t：VPC/自動化/Auto Scalingを優先" },
-  // ===== ここから 6/24 試験に向けた新スケジュール（無理のないペース）=====
-  { date:"6/1", dow:"月", shift:"B勤", shiftClass:"", workTime:"12:30〜21:30", targetHours:1.5,
-    tasks:[
-      {id:"n0601_1", label:"【弱点①】1-2 ネットワーク 確認テスト（教材タブ）"},
-      {id:"n0601_2", label:"単語帳: 1-2 VPC/SG/NACL/Route53（用語＋図解虫食い）"}
-    ], memo:"午前1.5h・無理せず弱点1-2に集中" },
-  { date:"6/2", dow:"火", shift:"B勤", shiftClass:"", workTime:"12:30〜21:30", targetHours:1.5,
-    tasks:[
-      {id:"n0602_1", label:"【弱点②】1-7 疎結合 SQS/SNS/Kinesis 確認テスト"},
-      {id:"n0602_2", label:"単語帳: 1-7（用語）＋「直接呼ばずキューを挟む」型を意識"}
-    ], memo:"午前1.5h・疎結合パターンが最大の弱点" },
-  { date:"6/3", dow:"水", shift:"休み", shiftClass:"off", workTime:"終日勉強可", targetHours:4,
-    tasks:[
-      {id:"n0603_m3", label:"模試③ 受験（本番形式・130分・時間計測）目標50%"},
-      {id:"n0603_rv", label:"模試③ 間違い全問の解説精読（章→Q対応で弱点記録）"}
-    ], memo:"4h・午前に模試③→午後に間違い復習。受験中の続きはここで完了" },
-  { date:"6/4", dow:"木", shift:"A勤", shiftClass:"", workTime:"8:30〜17:30", targetHours:2,
-    tasks:[
-      {id:"n0604_1", label:"模試③で間違えた問題の再演習（なぜ正解か声に出す）"},
-      {id:"n0604_2", label:"単語帳: 間違いに出たサービスを索引で確認"}
-    ], memo:"夕方2h・模試③の取りこぼしを潰す" },
-  { date:"6/5", dow:"金", shift:"休み", shiftClass:"off", workTime:"終日勉強可", targetHours:4,
-    tasks:[
-      {id:"n0605_1", label:"【弱点③】1-4 コンピュート(EC2/AutoScaling/ECS) 確認テスト＋単語帳"},
-      {id:"n0605_2", label:"【弱点④】1-3 IAM（ロール/リソースポリシー）確認テスト＋単語帳"},
-      {id:"n0605_3", label:"図解虫食い: EC2購入オプション/AutoScaling/IAM構成"}
-    ], memo:"4h・弱点1巡目（1-4/1-3）。図解で型を固める" },
-  { date:"6/6", dow:"土", shift:"夜勤1日目", shiftClass:"night1", workTime:"21:00〜33:30", targetHours:1,
-    tasks:[
-      {id:"n0606_1", label:"隙間Ping-t（寝ながらOK）VPC/IAMを軽く"}
-    ], memo:"夜勤・無理しない。隙間1hだけ" },
-  { date:"6/7", dow:"日", shift:"夜勤2日目", shiftClass:"night1", workTime:"21:00〜33:30", targetHours:0,
-    tasks:[{id:"n0607_1", label:"勉強NG・睡眠優先（連続夜勤なので休む）"}], memo:"完全休養" },
-  { date:"6/8", dow:"月", shift:"夜勤明け(休)", shiftClass:"nightafter", workTime:"〜9:30帰宅", targetHours:1.5,
-    tasks:[
-      {id:"n0608_1", label:"軽め: 単語帳・索引で弱点用語を眺める（新範囲NG）"}
-    ], memo:"夜勤明け・回復優先。午後に軽く1.5h" },
-  { date:"6/9", dow:"火", shift:"休み", shiftClass:"off", workTime:"終日勉強可", targetHours:4,
-    tasks:[
-      {id:"n0609_m4", label:"模試④ 受験（本番形式・130分）目標58%"},
-      {id:"n0609_rv", label:"模試④ 間違い全問の解説精読"}
-    ], memo:"4h・模試④で伸びを確認" },
-  { date:"6/10", dow:"水", shift:"休み", shiftClass:"off", workTime:"終日勉強可", targetHours:4,
-    tasks:[
-      {id:"n0610_1", label:"模試④で間違えた問題の再演習"},
-      {id:"n0610_2", label:"【弱点⑤】1-5 ストレージ(S3)＋1-6 DB(RDS/Aurora/DynamoDB) 確認テスト"}
-    ], memo:"4h・模試④復習＋弱点(1-5/1-6)" },
-  { date:"6/11", dow:"木", shift:"夜勤1日目", shiftClass:"night1", workTime:"21:00〜33:30", targetHours:1,
-    tasks:[
-      {id:"n0611_1", label:"隙間Ping-t（寝ながらOK）S3/RDS/DynamoDB"}
-    ], memo:"夜勤・隙間1hだけ" },
   { date:"6/12", dow:"金", shift:"夜勤2日目", shiftClass:"night1", workTime:"21:00〜33:30", targetHours:0,
-    tasks:[{id:"n0612_1", label:"勉強NG・睡眠優先"}], memo:"完全休養" },
+    tasks:[{id:"n0612_1", label:"勉強NG・睡眠優先"}], memo:"完全休養",
+    goal:"目標: しっかり寝て明日からの12日間に備える\n意識: 勉強ゼロでOK。休養も計画のうち、罪悪感を持たない" },
+  // ===== 6/12改訂: 模試①26%→②35%→③34%横ばいを受け「間違い見直し最優先」に再構成 =====
   { date:"6/13", dow:"土", shift:"夜勤明け(休)", shiftClass:"nightafter", workTime:"〜9:30帰宅", targetHours:1.5,
     tasks:[
-      {id:"n0613_1", label:"軽め: 図解虫食い（VPC/ELB/RDS Multi-AZ）"}
-    ], memo:"夜勤明け・回復優先。軽く1.5h" },
+      {id:"r0613_1", label:"【弱点1位】コンピュート: 模試③×11問(Q16,20,24,28,34,37,38,39,44,50,62)をチェックリストアプリで言語化"},
+      {id:"r0613_2", label:"単語帳→図解虫食い「移行・コンテナ・起動の選び分け」「ASGヘルスチェック」(1-4/3-3)"}
+    ], memo:"夜勤明け・新問題NG。見直しのみ軽く1.5h",
+    goal:"目標: 最多失点のコンピュート11問を「なぜ正解か」言える状態にする\n意識: 解き直しではなく言語化。①正解の理由 ②自分の回答が×の理由 ③他の選択肢が×の理由 を口に出す" },
   { date:"6/14", dow:"日", shift:"休み", shiftClass:"off", workTime:"終日勉強可", targetHours:4,
     tasks:[
-      {id:"n0614_m5", label:"模試⑤ 受験（本番形式・130分）目標65%"},
-      {id:"n0614_rv", label:"模試⑤ 間違い全問の解説精読＋再演習"}
-    ], memo:"4h・模試⑤。合格ラインが見えてくると理想" },
+      {id:"r0614_m4", label:"模試④ 受験（本番形式・130分・1問1.8分厳守）目標45%"},
+      {id:"r0614_rv", label:"模試④ 間違いのうちコンピュート/NW/IAM/DBの4テーマだけ即日精読"}
+    ], memo:"6/9から移動した模試④。残りの間違いは明日",
+    goal:"目標: 45%（模試③34%から+11pt）＋時間内に65問完走\n意識: 1問1.8分。2分考えて分からなければ印を付けて先へ。模試③の時間オーバーを繰り返さない" },
   { date:"6/15", dow:"月", shift:"A勤", shiftClass:"", workTime:"8:30〜17:30", targetHours:2,
     tasks:[
-      {id:"n0615_1", label:"4章 パフォーマンス(4-1〜4-5) 教材タブで通読＋確認テスト"}
-    ], memo:"夕方2h・4章は軽くキーワード把握でOK" },
+      {id:"r0615_1", label:"模試④ 残りの×問題をチェックリストアプリで全消化（復習優先度順・声に出す）"},
+      {id:"r0615_2", label:"図解虫食い「NATゲートウェイの冗長化」「Site-to-Site VPN構成」(3-2/1-2)"}
+    ], memo:"夕方2h・模試④の間違いを翌日に潰す",
+    goal:"目標: 模試④の×問題を全部「復習済み」にする\n意識: 昨日の間違いに今日もう一度会う（3回会えば覚える）。サービス名でなく「問題文のどの言葉が決め手か」で覚える" },
   { date:"6/16", dow:"火", shift:"A勤", shiftClass:"", workTime:"8:30〜17:30", targetHours:2,
     tasks:[
-      {id:"n0616_1", label:"5章 コスト最適化(5-1〜5-4) 教材タブで通読＋確認テスト"}
-    ], memo:"夕方2h・5章も軽く。これで全章カバー" },
+      {id:"r0616_1", label:"【弱点2位】NW総点検: NAT各AZ冗長/ASG×ELBヘルスチェック/CloudFrontヒット率/サイト間VPNの×問題見直し"},
+      {id:"r0616_2", label:"1-2 確認テスト＋図解虫食い(SG vs NACL・NAT冗長化・VPN・CloudFrontヒット率)"}
+    ], memo:"夕方2h・3回連続最多失点の章",
+    goal:"目標: NAT各AZ冗長/ASG×ELB/CloudFrontヒット率の「型」を即答できるようにする\n意識: SG=ステートフル／NACL=ステートレス、を迷わず言えるか自問しながら進める" },
   { date:"6/17", dow:"水", shift:"B勤", shiftClass:"", workTime:"12:30〜21:30", targetHours:1.5,
     tasks:[
-      {id:"n0617_1", label:"弱点2巡: 1-2/2-3（SG vs NACL の違いを完璧に）確認テスト"}
-    ], memo:"午前1.5h・ステートフル/ステートレスを暗記" },
+      {id:"r0617_1", label:"【弱点3位】IAM: 図解虫食い「認証サービスの選び分け」「Managed AD vs AD Connector」＋模試③Q11,18,36,43,56再演習"},
+      {id:"r0617_2", label:"1-3 確認テスト＋図解虫食い「IAMポリシー読解の原則」"}
+    ], memo:"午前1.5h・模試③で再悪化した認証系",
+    goal:"目標: Identity Center/Managed AD/AD Connectorを問題文の言葉だけで選び分けられる\n意識: 「AWS内でAD機能=Managed AD」「ログインをオンプレに丸投げ=AD Connector」。認証情報を直接置く選択肢は必ず誤り" },
   { date:"6/18", dow:"木", shift:"B勤", shiftClass:"", workTime:"12:30〜21:30", targetHours:1.5,
     tasks:[
-      {id:"n0618_1", label:"弱点2巡: 1-7/1-4（疎結合・スケーリング）確認テスト"}
-    ], memo:"午前1.5h・1巡目で弱かった所を再演習" },
+      {id:"r0618_1", label:"【弱点4位】DB周辺: DynamoDB Streams/グローバルテーブル/DAX/ElastiCache Redis＋模試③Q3,21,47再演習"},
+      {id:"r0618_2", label:"1-6 確認テスト＋図解虫食い「DynamoDB周辺・キャッシュの選び分け」"}
+    ], memo:"午前1.5h・模試③で全滅(0/3)した分野",
+    goal:"目標: DB周辺を0/3→3/3にする\n意識: 変更履歴=Streams／マルチリージョン=グローバルテーブル／マイクロ秒=DAX／永続インメモリ=Redis を反射で出す" },
   { date:"6/19", dow:"金", shift:"B勤", shiftClass:"", workTime:"12:30〜21:30", targetHours:1.5,
     tasks:[
-      {id:"n0619_1", label:"単語帳 総ざらい＋索引で曖昧な用語を確認"}
-    ], memo:"午前1.5h・知識の穴埋め" },
+      {id:"r0619_1", label:"S3＋疎結合: 図解虫食い「S3機能の選び分け」「SNS+SQSファンアウト」＋1-5/1-7確認テスト"},
+      {id:"r0619_2", label:"単語帳 総ざらい（弱点用語＋コスト系も軽く）"}
+    ], memo:"午前1.5h・改善中の分野を維持＋穴埋め",
+    goal:"目標: 改善中のS3・疎結合を取りこぼさない状態で明日の模試⑤へ\n意識: CRRはバージョニング必須／直接呼ばずキューを挟む。新しい範囲には手を出さない" },
   { date:"6/20", dow:"土", shift:"休み", shiftClass:"off", workTime:"終日勉強可", targetHours:4,
     tasks:[
-      {id:"n0620_m6", label:"模試⑥ 受験（本番形式・130分）目標70%"},
-      {id:"n0620_rv", label:"模試⑥ 間違い全問の解説精読＋再演習（総仕上げ）"}
-    ], memo:"4h・最後の本番形式模試。仕上がりを確認" },
+      {id:"r0620_m5", label:"模試⑤ 受験（本番形式・130分・時間内完走を最優先）目標55%"},
+      {id:"r0620_rv", label:"模試⑤ 間違い全問の解説精読＋再演習（総仕上げ）"}
+    ], memo:"4h・最後の本番形式模試。模試⑥は実施しない（復習優先）",
+    goal:"目標: 55%（模試④から+10pt）＋間違いの即日復習まで終える\n意識: 本番と同じ時間帯・環境で。終了後は点数より「どのテーマで落としたか」を見る" },
   { date:"6/21", dow:"日", shift:"夜勤1日目", shiftClass:"night1", workTime:"21:00〜33:30", targetHours:1,
     tasks:[
-      {id:"n0621_1", label:"隙間Ping-t（寝ながらOK）苦手分野だけ軽く"}
-    ], memo:"夜勤・隙間1hだけ・無理しない" },
+      {id:"r0621_1", label:"隙間: 模試⑤の×問題をチェックリストアプリで軽く見直し（寝ながらOK）"}
+    ], memo:"夜勤・隙間1hだけ・無理しない",
+    goal:"目標: 模試⑤の×問題に1回目の再会を済ませる\n意識: 夜勤日。眺めるだけでもOK。睡眠を削らない" },
   { date:"6/22", dow:"月", shift:"夜勤2日目", shiftClass:"night1", workTime:"21:00〜33:30", targetHours:0,
-    tasks:[{id:"n0622_1", label:"勉強NG・睡眠優先（試験2日前・体調最優先）"}], memo:"完全休養・体調を整える" },
+    tasks:[{id:"n0622_1", label:"勉強NG・睡眠優先（試験2日前・体調最優先）"}], memo:"完全休養・体調を整える",
+    goal:"目標: 体調を整える（試験2日前）\n意識: 勉強ゼロでOK。ここで無理すると当日に響く" },
   { date:"6/23", dow:"火", shift:"夜勤明け(休)", shiftClass:"nightafter", workTime:"〜9:30帰宅", targetHours:2,
     tasks:[
-      {id:"n0623_1", label:"試験前日: 間違いノート・重要サービス比較を総ざらい（新範囲NG）"},
+      {id:"r0623_1", label:"前日総ざらい: 単語帳の閲覧モードで【弱点】図解カード11枚を全部音読（新範囲NG）"},
       {id:"n0623_2", label:"21時には就寝（早寝厳守・睡眠が一番の対策）"}
-    ], memo:"前日・軽く2hのみ。新しいことはやらない。早寝厳守" },
+    ], memo:"前日・軽く2hのみ。新しいことはやらない。早寝厳守",
+    goal:"目標: 弱点カード11枚を「見ただけで答えが浮かぶ」状態にする\n意識: 新範囲は絶対やらない。不安になったら「間違いは特定パターンに集中=対策済み」と思い出す。21時就寝" },
   { date:"6/24", dow:"水", shift:"試験日", shiftClass:"exam", workTime:"-", targetHours:0.5,
     tasks:[
       {id:"n0624_1", label:"朝：重要サービス（VPC/IAM/S3/疎結合）をさらっと眺める"},
       {id:"n0624_2", label:"本番試験：720点以上！体調・水分・落ち着いて"}
-    ], memo:"体調最優先！食事・水分しっかり。落ち着いていけば大丈夫" }
+    ], memo:"体調最優先！食事・水分しっかり。落ち着いていけば大丈夫",
+    goal:"目標: 720点。落ち着いて時間内に完走する\n意識: 1問1.8分・迷ったらフラグで先へ。「認証情報直置きはNG」「直接呼ばずキューを挟む」「マネージド優先」の鉄則で消去法" }
 ];
 
 const EXAMS = [
   { id:"mock1", name:"模擬試験① (5/30)", target:"実績32%" },
   { id:"mock2", name:"模擬試験② ",      target:"実績(記録)" },
   { id:"mock3", name:"模試③ (6/3)",     target:"目標50%" },
-  { id:"mock4", name:"模試④ (6/9)",     target:"目標58%" },
-  { id:"mock5", name:"模試⑤ (6/14)",    target:"目標65%" },
-  { id:"mock6", name:"模試⑥ (6/20)",    target:"目標70%" },
+  { id:"mock4", name:"模試④ (6/14)",    target:"目標45%" },
+  { id:"mock5", name:"模試⑤ (6/20)",    target:"目標55%" },
+  { id:"mock6", name:"模試⑥ (予備)",     target:"実施なし（復習優先）" },
   { id:"main",  name:"本番試験 (6/24)",  target:"720/1000点以上" }
 ];
 
@@ -1429,7 +1361,8 @@ function totalActualHours() {
   return Object.values(state.actualHours).reduce((a,b) => a + (parseFloat(b)||0), 0);
 }
 function totalTargetHours() {
-  return SCHEDULE.reduce((a,d) => a + d.targetHours, 0);
+  // 削除済み過去日(5/20〜6/11)の目標時間も累計に含める
+  return PAST_TARGET_HOURS + SCHEDULE.reduce((a,d) => a + d.targetHours, 0);
 }
 function totalGapQuestions() {
   return Object.values(state.gapQuestions).reduce((a,b) => a + (parseInt(b,10)||0), 0);
@@ -1438,7 +1371,9 @@ function daysWithGapQ() {
   return Object.values(state.gapQuestions).filter(v => (parseInt(v,10)||0) > 0).length;
 }
 function countTasks() {
-  let total = 0, done = 0;
+  // 削除済み過去日のタスクも累計に含める（チェックはlocalStorageに残っている）
+  let total = PAST_TASK_IDS.length, done = 0;
+  PAST_TASK_IDS.forEach(id => { if (state.checks[id]) done++; });
   SCHEDULE.forEach(d => {
     d.tasks.forEach(t => {
       total++;
@@ -1538,6 +1473,7 @@ function renderSchedule() {
       </div>
       <div class="day-body">
         <div class="hint">勤務: ${d.workTime}${d.memo?"　／　"+escapeHtml(d.memo):""}</div>
+        ${d.goal?`<div class="day-goal">🎯 ${escapeHtml(d.goal)}</div>`:""}
         ${carryHtml}
         ${d.tasks.length ? `<div class="day-section">
           <div class="section-title">タスク</div>
