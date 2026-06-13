@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>SAA スキマクイズ</title>
+<style>
+  :root{
+    --bg:#f4f6f9; --card:#ffffff; --text:#1f2937; --sub:#6b7280;
+    --line:#e5e7eb; --accent:#2563eb; --accent2:#1d4ed8;
+    --ok:#16a34a; --okbg:#dcfce7; --ng:#dc2626; --ngbg:#fee2e2;
+    --btn:#f3f4f6; --shadow:0 1px 3px rgba(0,0,0,.08);
+  }
+  body.bed{
+    --bg:#15171c; --card:#1e2128; --text:#e8e2d6; --sub:#9aa0aa;
+    --line:#2c2f37; --accent:#c79a5b; --accent2:#b1854a;
+    --ok:#6fbf73; --okbg:#21331f; --ng:#e08585; --ngbg:#3a2222;
+    --btn:#262a31; --shadow:none;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{margin:0;background:var(--bg);color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Hiragino Kaku Gothic ProN",Meiryo,sans-serif;
+    line-height:1.6;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom);transition:background .2s}
+  .wrap{max-width:560px;margin:0 auto;padding:14px}
+  header{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}
+  h1{font-size:20px;margin:0;font-weight:800}
+  .modeToggle{display:flex;background:var(--btn);border-radius:999px;padding:3px;font-size:12px;font-weight:700}
+  .modeToggle button{border:0;background:transparent;color:var(--sub);padding:6px 12px;border-radius:999px;cursor:pointer}
+  .modeToggle button.on{background:var(--accent);color:#fff}
+  body.bed .modeToggle button.on{color:#1a1208}
+  nav{display:flex;gap:6px;margin-bottom:12px}
+  nav button{flex:1;border:0;background:var(--btn);color:var(--sub);padding:9px;border-radius:10px;font-weight:700;font-size:14px;cursor:pointer}
+  nav button.on{background:var(--card);color:var(--accent);box-shadow:var(--shadow)}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;box-shadow:var(--shadow);margin-bottom:12px}
+  .lead{color:var(--sub);font-size:13px;margin:0 0 12px}
+  .pick{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
+  .pick button{border:1px solid var(--line);background:var(--card);color:var(--text);padding:13px 10px;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;text-align:left}
+  .pick button .n{display:block;font-size:11px;color:var(--sub);font-weight:600;margin-top:2px}
+  .startbtn{width:100%;border:0;background:var(--accent);color:#fff;padding:15px;border-radius:12px;font-size:17px;font-weight:800;cursor:pointer;margin-top:4px}
+  body.bed .startbtn{color:#1a1208}
+  .startbtn:disabled{opacity:.45}
+  .count{display:flex;gap:8px;margin:10px 0}
+  .count button{flex:1;border:1px solid var(--line);background:var(--card);color:var(--text);padding:10px;border-radius:10px;font-weight:700;cursor:pointer}
+  .count button.on{border-color:var(--accent);color:var(--accent)}
+  /* quiz */
+  .prog{display:flex;align-items:center;justify-content:space-between;font-size:13px;color:var(--sub);margin-bottom:8px}
+  .bar{height:6px;background:var(--btn);border-radius:99px;overflow:hidden;margin-bottom:14px}
+  .bar > i{display:block;height:100%;background:var(--accent);width:0;transition:width .25s}
+  .tag{display:inline-block;font-size:11px;font-weight:700;color:var(--accent);background:var(--btn);padding:3px 9px;border-radius:99px;margin-bottom:10px}
+  .q{font-size:17px;font-weight:700;margin:0 0 14px}
+  .choices button{display:block;width:100%;text-align:left;border:1.5px solid var(--line);background:var(--card);color:var(--text);
+    padding:14px 14px;border-radius:12px;font-size:15px;margin-bottom:9px;cursor:pointer;transition:.12s}
+  .choices button:active{transform:scale(.99)}
+  .choices button.correct{border-color:var(--ok);background:var(--okbg)}
+  .choices button.wrong{border-color:var(--ng);background:var(--ngbg)}
+  .choices button.dim{opacity:.55}
+  .choices button .lab{font-weight:800;color:var(--sub);margin-right:8px}
+  .explain{border-radius:12px;padding:13px;margin-top:4px;font-size:14px;border:1px solid var(--line);background:var(--btn)}
+  .explain .res{font-weight:800;margin-bottom:6px}
+  .explain .res.ok{color:var(--ok)} .explain .res.ng{color:var(--ng)}
+  .explain .mn{margin-top:8px;padding-top:8px;border-top:1px dashed var(--line);color:var(--sub)}
+  .explain .mn b{color:var(--text)}
+  .nextbtn{width:100%;border:0;background:var(--accent);color:#fff;padding:14px;border-radius:12px;font-size:16px;font-weight:800;cursor:pointer;margin-top:12px}
+  body.bed .nextbtn{color:#1a1208}
+  /* review */
+  .stat{display:flex;align-items:center;justify-content:space-between;padding:11px 0;border-bottom:1px solid var(--line)}
+  .stat:last-child{border-bottom:0}
+  .stat .name{font-weight:700}
+  .stat .pct{font-weight:800}
+  .stat .pct.low{color:var(--ng)} .stat .pct.mid{color:#d97706} .stat .pct.hi{color:var(--ok)}
+  .mini{height:6px;background:var(--btn);border-radius:99px;overflow:hidden;width:90px}
+  .mini > i{display:block;height:100%}
+  .big{font-size:34px;font-weight:800;text-align:center;margin:4px 0}
+  .sub{text-align:center;color:var(--sub);font-size:13px;margin-bottom:6px}
+  .row{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+  .row button{flex:1;min-width:120px;border:1px solid var(--line);background:var(--card);color:var(--text);padding:12px;border-radius:11px;font-weight:700;cursor:pointer}
+  .row button.pri{background:var(--accent);color:#fff;border:0}
+  body.bed .row button.pri{color:#1a1208}
+  textarea{width:100%;min-height:120px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--text);padding:10px;font-size:12px;font-family:ui-monospace,Menlo,Consolas,monospace}
+  .hint{font-size:12px;color:var(--sub);margin:6px 0 0}
+  .empty{text-align:center;color:var(--sub);padding:24px 0}
+  .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--text);color:var(--bg);padding:10px 18px;border-radius:99px;font-weight:700;font-size:14px;opacity:0;pointer-events:none;transition:.2s}
+  .toast.show{opacity:1}
+  a.link{color:var(--accent);font-size:13px;text-decoration:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>📚 SAA スキマクイズ</h1>
+    <div class="modeToggle">
+      <button id="mCommute" class="on" onclick="setMode('commute')">🚃通勤</button>
+      <button id="mBed" onclick="setMode('bed')">🛏ベッド</button>
+    </div>
+  </header>
+  <nav>
+    <button id="navHome" class="on" onclick="show('home')">出題</button>
+    <button id="navReview" onclick="show('review')">復習・結果</button>
+    <button id="navData" onclick="show('data')">書出/読込</button>
+  </nav>
+
+  <!-- HOME -->
+  <section id="home">
+    <div class="card">
+      <p class="lead">弱点に絞った問題を出します。片手でサクッと。間違えた問題は「復習・結果」に貯まります。</p>
+      <div class="pick" id="pickField"></div>
+      <div class="count">
+        <button class="on" data-n="10" onclick="setCount(10)">10問</button>
+        <button data-n="20" onclick="setCount(20)">20問</button>
+        <button data-n="0" onclick="setCount(0)">全部</button>
+      </div>
+      <button class="startbtn" id="startBtn" onclick="startQuiz()">スタート</button>
+      <p class="hint" id="poolInfo"></p>
+    </div>
+  </section>
+
+  <!-- QUIZ -->
+  <section id="quiz" style="display:none">
+    <div class="prog"><span id="qPos"></span><span id="qScore"></span></div>
+    <div class="bar"><i id="qBar"></i></div>
+    <div class="card">
+      <span class="tag" id="qTag"></span>
+      <p class="q" id="qText"></p>
+      <div class="choices" id="qChoices"></div>
+      <div id="qExplain"></div>
+      <button class="nextbtn" id="qNext" style="display:none" onclick="nextQ()">次へ ▶</button>
+    </div>
+    <button class="row" style="border:0;background:transparent;color:var(--sub);width:100%;cursor:pointer;font-size:13px" onclick="abortQuiz()">← やめて戻る</button>
+  </section>
+
+  <!-- REVIEW -->
+  <section id="review" style="display:none">
+    <div class="card" id="reviewSummary"></div>
+    <div class="card">
+      <p class="lead" style="margin-bottom:8px">分野別の正答率（低い＝弱点）</p>
+      <div id="reviewStats"></div>
+    </div>
+    <div class="card">
+      <div class="row">
+        <button class="pri" onclick="reviewWrong()">❌ 間違いだけ復習</button>
+        <button onclick="reviewWeak()">弱点分野を出す</button>
+      </div>
+      <div class="row">
+        <button onclick="resetStats()">記録をリセット</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- DATA -->
+  <section id="data" style="display:none">
+    <div class="card">
+      <p class="lead">結果を書き出して、AI家庭教師プロンプトに貼れば「弱いところ」を教われます。</p>
+      <div class="row">
+        <button class="pri" onclick="exportAI()">📋 AI用テキストをコピー</button>
+        <button onclick="exportJSON()">💾 結果(JSON)を保存</button>
+      </div>
+      <textarea id="ioBox" placeholder="ここに JSON を貼って「読み込む」を押すと、結果や追加問題を取り込めます。"></textarea>
+      <div class="row">
+        <button onclick="importData()">読み込む</button>
+        <button onclick="copyFormat()">AIに問題を作らせる書式</button>
+      </div>
+      <p class="hint">※ このアプリの記録はこの端末・このブラウザに保存されます。機種変前は「結果(JSON)を保存」でバックアップを。</p>
+    </div>
+  </section>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============ 問題バンク（弱点特化・SAA-C03） ============ */
+const TOPICS = {compute:"コンピュート", network:"ネットワーク", iam:"IAM/認証", db:"データベース", s3:"S3"};
+const BANK = [
+/* --- コンピュート --- */
+{id:"c1",topic:"compute",q:"オンプレの数十台の物理/仮想サーバを、アプリ改修なし（リフト&シフト）で最小工数・最小ダウンタイムでAWSへ移行したい。最適なサービスは？",
+ choices:["AWS DataSync","AWS Application Migration Service (MGN)","AWS Elastic Beanstalk","VM Import/Export で1台ずつ手動"],a:1,
+ explain:"サーバ丸ごとのリフト&シフト移行は MGN。OS・アプリ・データをブロックレベルで継続レプリケートし、短時間のカットオーバーで切替できる。",mn:"<b>サーバ丸ごと移行＝MGN</b>。データだけ転送はDataSync、DB移行はDMS。"},
+{id:"c2",topic:"compute",q:"Webアプリを、インフラ管理を極力せずにデプロイ・スケーリング・モニタリングまで自動でやりたい。コードを上げるだけにしたい。",
+ choices:["EC2にApacheを手動構築","Elastic Beanstalk","CloudFormationでEC2を定義","Lambda + API Gateway"],a:1,
+ explain:"コードをアップするだけで環境一式（EC2/ELB/ASG）を自動構成・運用するPaaSが Elastic Beanstalk。",mn:"<b>『コードを上げるだけ』＝Beanstalk</b>。再現性のIaC化はCloudFormation。"},
+{id:"c3",topic:"compute",q:"コンテナを動かしたいが、サーバ（EC2）の管理・パッチ・スケーリングは一切したくない。",
+ choices:["EC2起動タイプのECS","ECS / EKS on Fargate","EC2にDockerを直接","Lightsail"],a:1,
+ explain:"サーバレスでコンテナを動かす＝Fargate。ホストのプロビジョニングや管理が不要。",mn:"<b>サーバ管理なしのコンテナ＝Fargate</b>。"},
+{id:"c4",topic:"compute",q:"毎週月曜の朝9時にアクセスが急増することが分かっている。最もコスト効率よく備えるスケーリングは？",
+ choices:["スケジュールドスケーリング","ターゲット追跡スケーリング","手動でインスタンス追加","スポットインスタンスを常時起動"],a:0,
+ explain:"発生タイミングが読めるなら、時刻ベースで事前に増やすスケジュールドスケーリングが最適。読めない負荷変動はターゲット追跡。",mn:"<b>時間が読める＝スケジュール／読めない＝ターゲット追跡</b>。"},
+{id:"c5",topic:"compute",q:"EC2起動時に毎回同じミドルウェア構成にしたい。かつ起動を最速にしたい。",
+ choices:["起動のたびユーザーデータで全部インストール","必要構成を焼いたカスタムAMIから起動","手動でSSHして構築","Systems Managerで毎回流す"],a:1,
+ explain:"構成を焼いたゴールデンAMIから起動すれば、毎回のインストールが不要で起動が速く確実。軽い差分はユーザーデータ。",mn:"<b>同じ構成を最速で＝カスタムAMI</b>。起動時の軽い処理＝ユーザーデータ。"},
+{id:"c6",topic:"compute",q:"ASG配下のEC2が、OSは生きているのにアプリが応答不能になることがある。異常なインスタンスを自動で入れ替えたい。",
+ choices:["EC2ヘルスチェックのまま","ELB(ターゲットグループ)ヘルスチェックを有効化","CloudWatchアラームだけ","手動で再起動"],a:1,
+ explain:"EC2チェックはハード/OS層だけ。アプリ層の異常まで見て入替させるにはELBヘルスチェックをASGに使う。",mn:"<b>アプリ層の死活＝ELBヘルスチェック</b>。OSだけ＝EC2チェック。"},
+{id:"c7",topic:"compute",q:"プライベートサブネットのEC2から大量のデータをS3へ。NATゲートウェイの通信料を避け、低コストかつ安全にしたい。",
+ choices:["NATゲートウェイ経由","ゲートウェイ型VPCエンドポイント(S3)","インターネットゲートウェイ","パブリックサブネットへ移設"],a:1,
+ explain:"S3/DynamoDBはゲートウェイ型VPCエンドポイントで、NATを通さずVPC内から無料で到達できる。",mn:"<b>VPCからS3を安く＝ゲートウェイ型エンドポイント</b>（追加料金なし）。"},
+{id:"c8",topic:"compute",q:"中断されても支障のないバッチ処理を、最も安く大量に回したい。",
+ choices:["オンデマンドEC2","リザーブドインスタンス","スポットインスタンス","Dedicated Host"],a:2,
+ explain:"中断耐性のあるワークロードはスポットが最安（最大9割引）。常時必要な定常分はRI/Savings Plans。",mn:"<b>中断OK＝スポット（最安）</b>。"},
+/* --- ネットワーク --- */
+{id:"n1",topic:"network",q:"セキュリティグループ(SG)の特徴として正しいのは？",
+ choices:["ステートレスで戻りも明示許可が必要","ステートフルで戻り通信は自動許可","サブネット単位で適用される","拒否(Deny)ルールを書ける"],a:1,
+ explain:"SGはステートフル。許可した通信の戻りは自動で通る。インスタンス(ENI)単位、許可ルールのみ。",mn:"<b>SG=ステートフル&許可のみ／NACL=ステートレス&許可も拒否も</b>。"},
+{id:"n2",topic:"network",q:"サブネット全体で特定IPからのアクセスをブロックしたい。設定後、戻り通信が通らない不具合が出た。原因の理解として正しいのは？",
+ choices:["SGはサブネット単位だから","NACLはステートレスで、戻りのエフェメラルポートも明示許可が必要だから","NATが無いから","ルートテーブルの問題"],a:1,
+ explain:"NACL(サブネット単位)はステートレス。戻り通信用に1024-65535のエフェメラルポートをアウトバウンドで許可する必要がある。",mn:"<b>NACLは戻りも自分で開ける（エフェメラルポート）</b>。"},
+{id:"n3",topic:"network",q:"プライベートサブネットのEC2から、インターネット上へOSアップデートを取得したい（外部からの着信は不要）。",
+ choices:["インターネットゲートウェイを付与","各AZにNATゲートウェイを配置","パブリックIPを付与","VPCピアリング"],a:1,
+ explain:"プライベートからの外向き通信はNATゲートウェイ。可用性のため各AZに1つずつ置く（AZ障害でも片方が生存）。",mn:"<b>プライベートの外向き＝NATゲートウェイ／各AZに1つ</b>。"},
+{id:"n4",topic:"network",q:"WebサーバはAppサーバからの通信だけ許可したい。AppサーバはAuto Scalingでインスタンスが入れ替わりIPが変動する。",
+ choices:["AppサーバのIP範囲をSGに列挙","WebサーバSGのソースにAppサーバのSG IDを指定","0.0.0.0/0を許可","NACLでIPを許可"],a:1,
+ explain:"ソースにSG IDを指定すれば、IPが変わっても『そのSGに属するインスタンス』を自動的に許可できる。",mn:"<b>動的なIPはSG ID参照で解決</b>。"},
+{id:"n5",topic:"network",q:"オンプレとAWSを、すぐに・暗号化して・低コストで接続したい（専用線の敷設は待てない）。",
+ choices:["Direct Connect","Site-to-Site VPN","VPCピアリング","Transit Gateway単体"],a:1,
+ explain:"即時・暗号化・低コストならインターネットVPN（Site-to-Site VPN）。安定帯域/低遅延が要るなら時間のかかるDirect Connect。",mn:"<b>すぐ&暗号化&安い＝VPN／専用線で安定＝Direct Connect</b>。"},
+{id:"n6",topic:"network",q:"独自ドメイン example.com（Zone Apex）に、CloudFrontディストリビューションを割り当てたい。",
+ choices:["CNAMEレコード","Route53のALIASレコード","Aレコードに固定IP","TXTレコード"],a:1,
+ explain:"Zone ApexにはCNAMEが使えない。Route53のALIASならCloudFront/ELB/S3をAレコード相当で割当でき、無料。",mn:"<b>頂点ドメインにAWSリソース＝ALIAS</b>。"},
+{id:"n7",topic:"network",q:"プライマリサイト障害時に、DR用のスタンバイサイトへ自動で切り替えたい。Route53でどう設定する？",
+ choices:["加重ルーティング","フェイルオーバールーティング＋ヘルスチェック","レイテンシールーティング","地理的近接性ルーティング"],a:1,
+ explain:"ヘルスチェックでプライマリの死活を監視し、異常時にセカンダリへ向けるのがフェイルオーバールーティング。",mn:"<b>障害時にDRへ＝フェイルオーバー+ヘルスチェック</b>。"},
+{id:"n8",topic:"network",q:"CloudFrontでオリジン(EC2/S3)の負荷とコストを下げたい。キャッシュヒット率を上げる施策として適切なのは？",
+ choices:["TTLを0にする","静的コンテンツのTTLを適切に長くし、キャッシュキーを最小化する","毎回オリジンへ取りに行く","署名付きCookieを必須化"],a:1,
+ explain:"TTLを長くし、不要なクエリ/ヘッダをキャッシュキーから外すとヒット率が上がり、オリジン負荷とコストが下がる。",mn:"<b>ヒット率UP＝TTL長め＋キャッシュキー絞る</b>。"},
+/* --- IAM --- */
+{id:"i1",topic:"iam",q:"EC2上のアプリからS3へアクセスさせたい。最も安全な方法は？",
+ choices:["アクセスキーをコードに記述","アクセスキーを環境変数に置く","S3権限を持つIAMロールをEC2にアタッチ","ルートユーザーの認証情報を使う"],a:2,
+ explain:"認証情報を埋め込む選択肢は常に誤り。EC2にIAMロールを付与すれば一時認証情報が自動管理される。",mn:"<b>キー直書きは必ず✕／サービス間はIAMロール</b>。"},
+{id:"i2",topic:"iam",q:"S3にオブジェクトが置かれたらLambdaを起動したい。S3(他サービス)からLambdaを呼べるようにする設定は？",
+ choices:["LambdaにIAMユーザーを作る","Lambdaのリソースベースポリシーで s3.amazonaws.com をPrincipalに許可","S3にアクセスキーを渡す","VPCピアリング"],a:1,
+ explain:"他サービスから呼ばせる権限は、呼ばれる側(Lambda)のリソースベースポリシーでPrincipalを許可する。",mn:"<b>他サービスから呼ばせる＝リソースベースポリシーのPrincipal</b>。"},
+{id:"i3",topic:"iam",q:"既存のオンプレActive Directoryをそのまま使い、AWSへのサインオンに利用したい（AWS側にディレクトリ機能は不要、橋渡しだけ）。",
+ choices:["AWS Managed Microsoft AD","AD Connector","Cognito ユーザープール","IAMユーザーを人数分作成"],a:1,
+ explain:"オンプレADへ問い合わせを中継するだけならAD Connector。AWS側にフルのAD機能が要るならManaged Microsoft AD。",mn:"<b>橋渡しだけ＝AD Connector／フル機能＝Managed AD</b>。"},
+{id:"i4",topic:"iam",q:"複数のAWSアカウントに対し、社員が1か所のログインでアクセスでき、権限を一元管理したい。",
+ choices:["各アカウントにIAMユーザーを作る","IAM Identity Center (旧AWS SSO)","アクセスキーを共有","Cognito"],a:1,
+ explain:"複数アカウント横断のSSOと権限の集中管理はIAM Identity Center。アプリ利用者の認証はCognito。",mn:"<b>社員の複数アカSSO＝Identity Center／アプリ利用者＝Cognito</b>。"},
+{id:"i5",topic:"iam",q:"あるユーザーに、Allow(S3フルアクセス)とDeny(特定バケットへのDelete)が同時に適用された。結果は？",
+ choices:["Allowが優先され削除できる","明示的Denyが優先され、そのバケットは削除できない","エラーになる","最後に評価された方が勝つ"],a:1,
+ explain:"ポリシー評価では明示的Denyが常に最優先。1つでもDenyがあれば許可されない。",mn:"<b>明示的Denyは最強（必ず勝つ）</b>。"},
+{id:"i6",topic:"iam",q:"別アカウントにAMIを共有し、そのAMIは暗号化されている。相手が起動できるために共有すべきものは？",
+ choices:["AMIのLaunchPermissionのみ","LaunchPermission＋暗号化に使ったKMSキーの利用許可","パブリック公開する","IAMユーザーを渡す"],a:1,
+ explain:"暗号化AMIは、AMI共有(LaunchPermission)に加え、暗号化に使ったKMSキーも対象アカウントに共有しないと復号できず起動できない。",mn:"<b>暗号化AMI共有＝AMI＋KMSキーの両方</b>。"},
+/* --- DB --- */
+{id:"d1",topic:"db",q:"DynamoDBの読み込みをマイクロ秒級に高速化したい（読み取り負荷が高い）。",
+ choices:["リードレプリカ","DynamoDB Accelerator (DAX)","ElastiCacheを手動実装","グローバルテーブル"],a:1,
+ explain:"DynamoDB専用のインメモリキャッシュがDAX。コード変更最小でマイクロ秒応答に。",mn:"<b>DynamoDB読込爆速＝DAX</b>。"},
+{id:"d2",topic:"db",q:"DynamoDBの項目が変更されたら、その変更を検知して後続処理(Lambda)を走らせたい。",
+ choices:["DynamoDB Streams","S3イベント通知","CloudTrail","SQSポーリング"],a:0,
+ explain:"テーブルの変更履歴をストリームとして流すのがDynamoDB Streams。Lambdaトリガーで後続処理へ。",mn:"<b>DynamoDBの変更検知＝Streams</b>。"},
+{id:"d3",topic:"db",q:"DynamoDBを複数リージョンでアクティブ-アクティブ運用し、各地で低遅延に読み書きしたい。",
+ choices:["リードレプリカ","グローバルテーブル","Aurora Global Database","クロスリージョンスナップショット"],a:1,
+ explain:"DynamoDBのマルチリージョン・マルチアクティブ複製はグローバルテーブル。",mn:"<b>DynamoDBを世界中で＝グローバルテーブル</b>。"},
+{id:"d4",topic:"db",q:"Webアプリのセッション情報を、高速なインメモリで保持しつつ、永続性とパーティション(クラスタ)も欲しい。",
+ choices:["ElastiCache for Memcached","ElastiCache for Redis","RDS MySQL","DynamoDB"],a:1,
+ explain:"永続化・レプリケーション・クラスタ(パーティション)が要るインメモリはRedis。シンプルな一時キャッシュのみならMemcached。",mn:"<b>永続/複製/クラスタ要＝Redis／単純キャッシュ＝Memcached</b>。"},
+{id:"d5",topic:"db",q:"リレーショナルDBを、世界中のユーザーへ低遅延の読み取りで提供し、リージョン障害時のDRにも備えたい。",
+ choices:["RDS Multi-AZ","Aurora Global Database","DynamoDBグローバルテーブル","リードレプリカを同一AZに複数"],a:1,
+ explain:"Auroraを複数リージョンに広げ、1秒未満の遅延で複製＋高速DR昇格できるのがAurora Global Database。",mn:"<b>RDBMSをグローバル低遅延&DR＝Aurora Global Database</b>。"},
+{id:"d6",topic:"db",q:"単一リージョン内でAurora/RDSの読み取り負荷を分散したい。",
+ choices:["リードレプリカを追加","Multi-AZにする","インスタンスタイプを上げ続ける","DAXを使う"],a:0,
+ explain:"読み取りスケールはリードレプリカ。Multi-AZは可用性(同期スタンバイ)であって読み取り分散ではない点に注意。",mn:"<b>読込分散＝リードレプリカ／可用性＝Multi-AZ</b>。"},
+/* --- S3 --- */
+{id:"s1",topic:"s3",q:"非公開バケットのファイルを、特定の人に一定時間だけダウンロードさせたい。",
+ choices:["バケットを公開する","署名付きURL(Pre-signed URL)を発行","IAMユーザーを渡す","バケットポリシーで全許可"],a:1,
+ explain:"期限付きの一時アクセスは署名付きURL。発行者の権限で、期限内だけ対象オブジェクトにアクセスできる。",mn:"<b>一時配布＝署名付きURL</b>。"},
+{id:"s2",topic:"s3",q:"あるバケットを、特定の社内IPアドレスからのみアクセス可能にしたい。",
+ choices:["署名付きURL","バケットポリシーで aws:SourceIp を条件に","ACLでIP指定","SGで制御"],a:1,
+ explain:"バケット単位のIP制限はバケットポリシーのCondition(aws:SourceIp)。S3にSGは使えない。",mn:"<b>S3のIP制限＝バケットポリシーのCondition</b>。"},
+{id:"s3",topic:"s3",q:"年に数回しか取り出さないが、長期保管が必須のデータを最も安く保管したい（取り出しに時間がかかってよい）。",
+ choices:["S3 Standard","S3 Standard-IA","S3 Glacier Deep Archive","S3 One Zone-IA"],a:2,
+ explain:"最安の長期アーカイブはGlacier Deep Archive。取り出しに時間(数時間)を許容できる場合に最適。",mn:"<b>滅多に出さない最安アーカイブ＝Glacier Deep Archive</b>。"},
+{id:"s4",topic:"s3",q:"S3のクロスリージョンレプリケーション(CRR)を有効化しようとしたら設定できない。前提条件は？",
+ choices:["静的ウェブホスティングが必要","送信元・先の両バケットでバージョニングが有効","パブリック公開が必要","Transfer Acceleration"],a:1,
+ explain:"レプリケーション(CRR/SRR)はバージョニング有効が必須。両側で有効化する。",mn:"<b>S3レプリケーション＝バージョニング必須</b>。"},
+{id:"s5",topic:"s3",q:"大量に保存したCSV/JSONから、必要な列・行だけをサーバ側で抽出し、転送量とコストを抑えたい。",
+ choices:["全件ダウンロードしてアプリで絞る","S3 Select","Athenaでテーブル作成必須","Glacierへ移動"],a:1,
+ explain:"オブジェクト内をSQLで部分取得できるのがS3 Select。転送・処理コストを削減できる。",mn:"<b>S3内をSQLで部分取得＝S3 Select</b>。"},
+{id:"s6",topic:"s3",q:"EBSスナップショットの取得・世代管理・削除を自動化したい。",
+ choices:["手動でスナップショット","Data Lifecycle Manager (DLM)","S3ライフサイクル","CloudTrail"],a:1,
+ explain:"EBSスナップショットの自動スケジュール管理はDLM。S3オブジェクトの階層移動はS3ライフサイクル。",mn:"<b>EBSスナップ自動化＝DLM／S3の自動移行＝ライフサイクル</b>。"},
+];
+
+/* ============ 状態 ============ */
+const LS_STATS="saaQuizStats_v1", LS_MODE="saaQuizMode_v1", LS_EXTRA="saaQuizExtra_v1";
+let stats = load(LS_STATS, {});           // id -> {seen,correct,wrongLast}
+let extra = load(LS_EXTRA, []);           // 追加問題
+let sel = {field:"weak", count:10};
+let session = null;
+
+function allBank(){ return BANK.concat(extra); }
+function load(k,d){ try{return JSON.parse(localStorage.getItem(k))??d}catch(e){return d} }
+function save(k,v){ localStorage.setItem(k,JSON.stringify(v)); }
+function toast(m){ const t=document.getElementById('toast'); t.textContent=m; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),1500); }
+
+/* ============ モード/ナビ ============ */
+function setMode(m){
+  document.body.classList.toggle('bed', m==='bed');
+  document.getElementById('mBed').classList.toggle('on', m==='bed');
+  document.getElementById('mCommute').classList.toggle('on', m!=='bed');
+  save(LS_MODE,m);
+}
+function show(id){
+  ['home','quiz','review','data'].forEach(s=>document.getElementById(s).style.display='none');
+  document.getElementById(id).style.display='block';
+  document.getElementById('navHome').classList.toggle('on',id==='home');
+  document.getElementById('navReview').classList.toggle('on',id==='review');
+  document.getElementById('navData').classList.toggle('on',id==='data');
+  if(id==='review') renderReview();
+  if(id==='home') renderHome();
+}
+
+/* ============ ホーム ============ */
+function renderHome(){
+  const pf=document.getElementById('pickField');
+  const counts=fieldCounts();
+  const items=[["weak","⭐ 弱点優先","おすすめ"],["all","全分野",allBank().length+"問"],
+    ...Object.entries(TOPICS).map(([k,v])=>[k,v,(counts[k]||0)+"問"])];
+  pf.innerHTML=items.map(([k,label,n])=>
+    `<button data-f="${k}" onclick="setField('${k}')">${label}<span class="n">${n}</span></button>`).join('');
+  setField(sel.field); setCount(sel.count);
+  updatePool();
+}
+function fieldCounts(){ const c={}; allBank().forEach(q=>c[q.topic]=(c[q.topic]||0)+1); return c; }
+function setField(f){ sel.field=f; document.querySelectorAll('#pickField button').forEach(b=>b.style.borderColor = b.dataset.f===f?'var(--accent)':'var(--line)'); updatePool(); }
+function setCount(n){ sel.count=n; document.querySelectorAll('.count button').forEach(b=>b.classList.toggle('on', +b.dataset.n===n)); updatePool(); }
+function buildPool(){
+  let pool=allBank();
+  if(sel.field==='weak'){
+    pool=[...pool].sort((a,b)=>scoreWeak(a)-scoreWeak(b)); // 弱い/未挑戦を前に
+  }else if(sel.field!=='all'){
+    pool=pool.filter(q=>q.topic===sel.field);
+  }else{
+    pool=shuffle([...pool]);
+  }
+  if(sel.field==='weak') {/* keep weak-first order but shuffle ties lightly */}
+  const n=sel.count||pool.length;
+  return pool.slice(0,n);
+}
+function scoreWeak(q){ const s=stats[q.id]; if(!s||!s.seen) return -100; return s.correct/s.seen; }
+function updatePool(){ const p=buildPool(); document.getElementById('poolInfo').textContent=`今回の出題: ${p.length}問`; document.getElementById('startBtn').disabled=p.length===0; }
+
+/* ============ クイズ ============ */
+function startQuiz(custom){
+  const qs = custom || buildPool();
+  if(!qs.length){ toast('問題がありません'); return; }
+  session={list:qs, i:0, correct:0, wrongIds:[]};
+  show('quiz'); renderQ();
+}
+function renderQ(){
+  const q=session.list[session.i];
+  document.getElementById('qPos').textContent=`${session.i+1} / ${session.list.length}`;
+  document.getElementById('qScore').textContent=`正解 ${session.correct}`;
+  document.getElementById('qBar').style.width=`${session.i/session.list.length*100}%`;
+  document.getElementById('qTag').textContent=TOPICS[q.topic];
+  document.getElementById('qText').textContent=q.q;
+  const ch=document.getElementById('qChoices');
+  ch.innerHTML=q.choices.map((c,idx)=>`<button onclick="answer(${idx})"><span class="lab">${'ABCD'[idx]}</span>${c}</button>`).join('');
+  document.getElementById('qExplain').innerHTML='';
+  document.getElementById('qNext').style.display='none';
+  document.getElementById('qNext').textContent = session.i===session.list.length-1 ? '結果を見る ▶' : '次へ ▶';
+}
+function answer(idx){
+  const q=session.list[session.i];
+  const ok = idx===q.a;
+  // record
+  const s=stats[q.id]||{seen:0,correct:0,wrongLast:false};
+  s.seen++; if(ok)s.correct++; s.wrongLast=!ok; stats[q.id]=s; save(LS_STATS,stats);
+  if(ok)session.correct++; else session.wrongIds.push(q.id);
+  // UI
+  const btns=document.querySelectorAll('#qChoices button');
+  btns.forEach((b,bi)=>{ b.disabled=true;
+    if(bi===q.a)b.classList.add('correct');
+    else if(bi===idx)b.classList.add('wrong');
+    else b.classList.add('dim');
+  });
+  document.getElementById('qExplain').innerHTML=
+    `<div class="explain"><div class="res ${ok?'ok':'ng'}">${ok?'⭕ 正解':'❌ 不正解（正解は '+'ABCD'[q.a]+'）'}</div>${q.explain}
+     <div class="mn">💡 覚え方: ${q.mn}</div></div>`;
+  document.getElementById('qNext').style.display='block';
+  document.getElementById('qBar').style.width=`${(session.i+1)/session.list.length*100}%`;
+}
+function nextQ(){
+  if(session.i>=session.list.length-1){ finishQuiz(); return; }
+  session.i++; renderQ();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function finishQuiz(){ const c=session.correct, t=session.list.length; show('review'); toast(`${t}問中 ${c}問正解！`); }
+function abortQuiz(){ session=null; show('home'); }
+
+/* ============ 復習・結果 ============ */
+function renderReview(){
+  const bank=allBank();
+  let seen=0,correct=0;
+  bank.forEach(q=>{const s=stats[q.id]; if(s&&s.seen){seen+=s.seen;correct+=s.correct;}});
+  const pct = seen? Math.round(correct/seen*100):0;
+  const sum=document.getElementById('reviewSummary');
+  if(!seen){ sum.innerHTML='<div class="empty">まだ記録がありません。<br>「出題」から始めましょう。</div>'; }
+  else{
+    let msg = pct>=72? '合格ライン超え！この調子で弱点を埋めよう。' : pct>=50? 'あと一歩。間違えた分野を集中的に潰そう。' : '伸びしろ大。下の弱点分野から1つずつ確実に。';
+    sum.innerHTML=`<div class="big">${pct}%</div><div class="sub">のべ ${seen}問 / 正解 ${correct}　（合格ライン72%）</div><p class="lead" style="text-align:center;margin:8px 0 0">${msg}</p>`;
+  }
+  // per topic
+  const box=document.getElementById('reviewStats'); let html='';
+  Object.entries(TOPICS).forEach(([k,name])=>{
+    let s=0,c=0; bank.filter(q=>q.topic===k).forEach(q=>{const r=stats[q.id]; if(r&&r.seen){s+=r.seen;c+=r.correct;}});
+    const p= s? Math.round(c/s*100):null;
+    const cls= p===null?'':p<50?'low':p<72?'mid':'hi';
+    const barcol= p===null?'var(--line)':p<50?'var(--ng)':p<72?'#d97706':'var(--ok)';
+    html+=`<div class="stat"><span class="name">${name}</span>
+      <span style="display:flex;align-items:center;gap:10px">
+        <span class="mini"><i style="width:${p||0}%;background:${barcol}"></i></span>
+        <span class="pct ${cls}">${p===null?'—':p+'%'}</span></span></div>`;
+  });
+  box.innerHTML=html;
+}
+function reviewWrong(){
+  const ids=allBank().filter(q=>stats[q.id]&&stats[q.id].wrongLast).map(q=>q.id);
+  if(!ids.length){ toast('間違いの記録がありません'); return; }
+  startQuiz(allBank().filter(q=>ids.includes(q.id)));
+}
+function reviewWeak(){
+  const bank=allBank();
+  // 正答率の低い分野トップを抽出
+  let worst=null,worstP=2;
+  Object.keys(TOPICS).forEach(k=>{let s=0,c=0;bank.filter(q=>q.topic===k).forEach(q=>{const r=stats[q.id];if(r&&r.seen){s+=r.seen;c+=r.correct;}});if(s){const p=c/s;if(p<worstP){worstP=p;worst=k;}}});
+  if(!worst){ toast('まず何問か解いてください'); return; }
+  show('home'); setField(worst); toast(TOPICS[worst]+'を出します');
+  startQuiz(bank.filter(q=>q.topic===worst));
+}
+function resetStats(){ if(confirm('正答率などの記録をすべて消します。よろしいですか？')){ stats={}; save(LS_STATS,stats); renderReview(); toast('記録をリセットしました'); } }
+
+/* ============ 書き出し / 読み込み ============ */
+function buildResultObj(){
+  const bank=allBank(); const byTopic={};
+  Object.keys(TOPICS).forEach(k=>{let s=0,c=0;bank.filter(q=>q.topic===k).forEach(q=>{const r=stats[q.id];if(r&&r.seen){s+=r.seen;c+=r.correct;}});byTopic[k]={seen:s,correct:c};});
+  return {type:"saa-quiz-result", date:new Date().toISOString().slice(0,10), stats, byTopic};
+}
+function exportJSON(){
+  const blob=new Blob([JSON.stringify(buildResultObj(),null,2)],{type:'application/json'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download=`saa-quiz-${new Date().toISOString().slice(0,10)}.json`; a.click();
+  toast('JSONを保存しました');
+}
+function exportAI(){
+  const bank=allBank(); const r=buildResultObj();
+  let txt=`SAA-C03 クイズ結果 (${r.date})\n`;
+  let ts=0,tc=0; Object.values(r.byTopic).forEach(v=>{ts+=v.seen;tc+=v.correct;});
+  txt+=`総合: ${tc}/${ts} (${ts?Math.round(tc/ts*100):0}%) ／ 合格ライン72%\n\n分野別:\n`;
+  Object.entries(TOPICS).forEach(([k,name])=>{const v=r.byTopic[k];const p=v.seen?Math.round(v.correct/v.seen*100):null;
+    txt+=`- ${name}: ${p===null?'未挑戦':v.correct+'/'+v.seen+' ('+p+'%)'}${p!==null&&p<72?'  ← 弱い':''}\n`;});
+  const wrong=bank.filter(q=>stats[q.id]&&stats[q.id].wrongLast);
+  if(wrong.length){ txt+=`\n直近で間違えた問題:\n`; wrong.forEach((q,i)=>{txt+=`${i+1}. [${TOPICS[q.topic]}] ${q.q}\n   → 正解: ${'ABCD'[q.a]} ${q.choices[q.a]}\n`;});}
+  txt+=`\nこの結果をもとに、弱い分野を優先して解説し、同じ論点の問題を出してください。`;
+  navigator.clipboard.writeText(txt).then(()=>toast('AI用テキストをコピーしました')).catch(()=>{document.getElementById('ioBox').value=txt;toast('下のボックスに出力しました');});
+}
+function importData(){
+  let obj; try{obj=JSON.parse(document.getElementById('ioBox').value);}catch(e){ toast('JSONの形式が不正です'); return; }
+  // 追加問題の取り込み
+  let arr = Array.isArray(obj)?obj : (obj.questions||null);
+  if(arr){
+    let n=0; arr.forEach(q=>{ if(q.id&&q.q&&q.choices&&q.choices.length>=2&&typeof q.a==='number'&&TOPICS[q.topic]){
+      if(!allBank().some(x=>x.id===q.id)){ extra.push({id:q.id,topic:q.topic,q:q.q,choices:q.choices,a:q.a,explain:q.explain||'',mn:q.mn||q.mnemonic||''}); n++; } }});
+    save(LS_EXTRA,extra); toast(n+'問を追加しました'); renderHome(); return;
+  }
+  // 結果の復元
+  if(obj.stats){ stats=obj.stats; save(LS_STATS,stats); toast('結果を読み込みました'); renderReview(); return; }
+  toast('対応する内容が見つかりません');
+}
+function copyFormat(){
+  const fmt=`次のJSON配列の形式で、AWS SAA-C03の4択問題を作ってください（topicは compute / network / iam / db / s3 のいずれか、aは正解の選択肢番号0始まり）。私の弱点（コンピュート→ネットワーク→IAM→DB→S3）を優先してください。\n\n[\n  {"id":"x1","topic":"network","q":"問題文","choices":["A選択肢","B選択肢","C選択肢","D選択肢"],"a":1,"explain":"なぜ正解か・他がダメか","mn":"覚え方・語呂"}\n]\n\n出力はJSONだけにしてください（このアプリの「読み込む」に貼って取り込みます）。`;
+  navigator.clipboard.writeText(fmt).then(()=>toast('書式をコピーしました')).catch(()=>{document.getElementById('ioBox').value=fmt;toast('下に出力しました');});
+}
+
+/* ============ ユーティリティ ============ */
+function shuffle(a){ for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; }
+
+/* ============ 起動 ============ */
+setMode(load(LS_MODE,'commute'));
+renderHome();
+</script>
+</body>
+</html>
