@@ -112,6 +112,7 @@
       <button class="startbtn" id="startBtn" onclick="startQuiz()">スタート</button>
       <p class="hint" id="poolInfo"></p>
     </div>
+    <p style="text-align:center;margin:2px 0 0"><a class="link" href="cheat.html">📄 直前チートシート（言葉→サービス）を開く</a></p>
   </section>
 
   <!-- QUIZ -->
@@ -381,7 +382,8 @@ function show(id){
 function renderHome(){
   const pf=document.getElementById('pickField');
   const counts=fieldCounts();
-  const items=[["weak","⭐ 弱点優先","おすすめ"],["all","全分野",allBank().length+"問"],
+  const leechN=allBank().filter(q=>{const s=stats[q.id];return s&&(s.seen-s.correct)>=2;}).length;
+  const items=[["weak","⭐ 弱点優先","おすすめ"],["leech","🔁 苦手(2回+)",leechN+"問"],["all","全分野",allBank().length+"問"],
     ...Object.entries(TOPICS).map(([k,v])=>[k,v,(counts[k]||0)+"問"])];
   pf.innerHTML=items.map(([k,label,n])=>
     `<button data-f="${k}" onclick="setField('${k}')">${label}<span class="n">${n}</span></button>`).join('');
@@ -395,6 +397,8 @@ function buildPool(){
   let pool=allBank();
   if(sel.field==='weak'){
     pool=[...pool].sort((a,b)=>scoreWeak(a)-scoreWeak(b)); // 弱い/未挑戦を前に
+  }else if(sel.field==='leech'){
+    pool=shuffle(pool.filter(q=>{const s=stats[q.id];return s&&(s.seen-s.correct)>=2;})); // 2回以上ミス
   }else if(sel.field!=='all'){
     pool=pool.filter(q=>q.topic===sel.field);
   }else{

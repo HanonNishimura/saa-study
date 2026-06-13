@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>SAA 直前チートシート</title>
+<style>
+  :root{
+    --bg:#f4f6f9; --card:#fff; --text:#1f2937; --sub:#6b7280; --line:#e5e7eb;
+    --accent:#2563eb; --aBg:#eef2ff; --head:#111827; --headbg:#e8edf5; --btn:#f3f4f6;
+  }
+  body.dark{
+    --bg:#15171c; --card:#1e2128; --text:#e8e2d6; --sub:#9aa0aa; --line:#2c2f37;
+    --accent:#e0a85a; --aBg:#2a2418; --head:#e8e2d6; --headbg:#262a31; --btn:#262a31;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{margin:0;background:var(--bg);color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Hiragino Kaku Gothic ProN",Meiryo,sans-serif;
+    line-height:1.55;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}
+  .wrap{max-width:600px;margin:0 auto;padding:14px}
+  header{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:4px}
+  h1{font-size:19px;margin:0;font-weight:800}
+  .toggle{border:0;background:var(--btn);color:var(--text);padding:7px 12px;border-radius:999px;font-weight:700;font-size:13px;cursor:pointer}
+  .top{display:flex;gap:8px;align-items:center;margin:8px 0 12px}
+  #filter{flex:1;border:1px solid var(--line);background:var(--card);color:var(--text);border-radius:10px;padding:11px 12px;font-size:15px}
+  a.back{color:var(--accent);text-decoration:none;font-size:13px;font-weight:700;white-space:nowrap}
+  .lead{color:var(--sub);font-size:12px;margin:0 0 12px}
+  h2{position:sticky;top:0;background:var(--headbg);color:var(--head);font-size:15px;margin:16px 0 0;
+    padding:9px 12px;border-radius:10px 10px 0 0;z-index:1}
+  .sec{background:var(--card);border:1px solid var(--line);border-top:0;border-radius:0 0 12px 12px;
+    padding:4px 12px 8px;margin-bottom:14px}
+  .row{padding:9px 0;border-bottom:1px solid var(--line)}
+  .row:last-child{border-bottom:0}
+  .q{font-size:13.5px;color:var(--sub)}
+  .a{font-size:15px;font-weight:800;color:var(--accent);background:var(--aBg);display:inline-block;
+    margin-top:3px;padding:2px 8px;border-radius:7px}
+  .note{font-size:13px;color:var(--text);background:var(--btn);border-radius:9px;padding:9px 11px;margin:8px 0}
+  .note b{color:var(--accent)}
+  .empty{display:none;text-align:center;color:var(--sub);padding:20px}
+  footer{text-align:center;color:var(--sub);font-size:12px;margin:10px 0 4px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>📄 直前チートシート</h1>
+    <button class="toggle" id="tg" onclick="toggleTheme()">🌙 暗</button>
+  </header>
+  <p class="lead">「問題文にこの言葉が出たら → このサービス」。休憩中・直前に流し読み用。</p>
+  <div class="top">
+    <input id="filter" placeholder="🔍 キーワードで絞り込み（例: 移行, 暗号化, キャッシュ）" oninput="doFilter()">
+    <a class="back" href="quiz.html">← クイズ</a>
+  </div>
+
+  <div id="content">
+  <h2>🖥 コンピュート（最優先）</h2>
+  <div class="sec">
+    <div class="row"><div class="q">コード/OSを変えずに移行・最小運用 / .NET・Java</div><div class="a">Elastic Beanstalk</div></div>
+    <div class="row"><div class="q">サーバ(VM)を丸ごとAWSへ移行</div><div class="a">Application Migration Service (MGN)</div></div>
+    <div class="row"><div class="q">DBの移行</div><div class="a">DMS（スキーマ変換はSCT）</div></div>
+    <div class="row"><div class="q">コンテナの管理サーバ不要</div><div class="a">ECS / EKS ＋ Fargate</div></div>
+    <div class="row"><div class="q">Kubernetes（OSS標準）</div><div class="a">EKS</div></div>
+    <div class="row"><div class="q">起動時に最新ソフトを自動インストール</div><div class="a">ユーザーデータ</div></div>
+    <div class="row"><div class="q">起動を速く・毎回同じ構成</div><div class="a">構成済みAMI ＋ 起動テンプレート</div></div>
+    <div class="row"><div class="q">決まった時間帯にスケール</div><div class="a">スケジュールドスケーリング</div></div>
+    <div class="row"><div class="q">負荷に応じて自動でスケール</div><div class="a">ターゲット追跡スケーリング</div></div>
+    <div class="row"><div class="q">今すぐ手動で台数変更</div><div class="a">希望キャパシティを変更</div></div>
+    <div class="row"><div class="q">本番EC2の誤削除を防止</div><div class="a">Termination Protection ＋ IAM ＋ タグ</div></div>
+    <div class="row"><div class="q">EC2からS3へ閉域アクセス</div><div class="a">S3ゲートウェイVPCエンドポイント（無料）</div></div>
+    <div class="row"><div class="q">中断OK・短期で最安</div><div class="a">スポットインスタンス</div></div>
+    <div class="row"><div class="q">常時稼働で割引</div><div class="a">リザーブド / Savings Plans</div></div>
+  </div>
+
+  <h2>🌐 ネットワーク（最優先）</h2>
+  <div class="sec">
+    <div class="row"><div class="q">プライベートサブネットから外向き通信</div><div class="a">NATゲートウェイ（各AZに1つ）</div></div>
+    <div class="row"><div class="q">NATの可用性/スケーラビリティを上げる</div><div class="a">NATゲートウェイ（各AZ）</div></div>
+    <div class="row"><div class="q">ネットワークトラフィックのログ</div><div class="a">VPCフローログ</div></div>
+    <div class="row"><div class="q">OS内部のログ/メトリクス</div><div class="a">CloudWatch Agent</div></div>
+    <div class="row"><div class="q">異常を避けて切替（DR）</div><div class="a">Route53 フェイルオーバー</div></div>
+    <div class="row"><div class="q">両方を均等に使う</div><div class="a">加重 or レイテンシールーティング</div></div>
+    <div class="row"><div class="q">ASGがスケールしない（ELB異常なのに）</div><div class="a">ASGのヘルスチェックをELBに変更</div></div>
+    <div class="row"><div class="q">CloudFrontのキャッシュヒット率↑</div><div class="a">不要なクエリ/Cookie/ヘッダを転送しない＋TTL最適化</div></div>
+    <div class="row"><div class="q">オンプレ↔AWSを暗号化VPN</div><div class="a">サイト間VPN（AWS=VGW/TGW, オンプレ=CGW）</div></div>
+    <div class="row"><div class="q">専用線で安定・低遅延</div><div class="a">Direct Connect</div></div>
+    <div class="row"><div class="q">ハイブリッドのDNS名前解決</div><div class="a">Route53 Resolver（イン/アウトバウンドEP）</div></div>
+    <div class="row"><div class="q">頂点ドメインにELB/CloudFront割当</div><div class="a">Route53 ALIASレコード</div></div>
+    <div class="row"><div class="q">DDoS緩和</div><div class="a">Shield（+WAF/CloudFront/Route53）</div></div>
+    <div class="note"><b>SG=ステートフル</b>（戻り自動許可・許可のみ）／ <b>NACL=ステートレス</b>（戻りもエフェメラルポート明示・許可も拒否も）</div>
+  </div>
+
+  <h2>🔐 IAM / 認証</h2>
+  <div class="sec">
+    <div class="row"><div class="q">複数AWSアカウント＋SAML/外部IdP＋SSO</div><div class="a">IAM Identity Center</div></div>
+    <div class="row"><div class="q">LDAP/Kerberos/Windows / AWS内にAD機能</div><div class="a">AWS Managed Microsoft AD</div></div>
+    <div class="row"><div class="q">オンプレADをそのまま使う / ディレクトリ作らない</div><div class="a">AD Connector</div></div>
+    <div class="row"><div class="q">小規模・MS AD連携不要・安く簡単</div><div class="a">Simple AD</div></div>
+    <div class="row"><div class="q">他社に自社リソースへのアクセス許可</div><div class="a">IAMロール ＋ 外部ID(External ID)</div></div>
+    <div class="row"><div class="q">アプリの一般ユーザーのサインアップ/ログイン</div><div class="a">Amazon Cognito</div></div>
+    <div class="row"><div class="q">サービス→サービスの権限</div><div class="a">IAMロール（キー直書きは✕）</div></div>
+    <div class="row"><div class="q">他サービスから呼ばせる権限</div><div class="a">リソースベースポリシーのPrincipal</div></div>
+    <div class="note"><b>AWS内でAD機能を使う＝Managed AD</b> ／ <b>ログインをオンプレに丸投げ＝AD Connector</b><br>ポリシー: <b>明示的Denyが最優先</b>。Allowが無ければ何もできない。アクション一覧に無い操作は禁止されない。</div>
+  </div>
+
+  <h2>🗄 データベース</h2>
+  <div class="sec">
+    <div class="row"><div class="q">項目の変更履歴/トリガー（追加・更新・削除）</div><div class="a">DynamoDB Streams（→Lambda）</div></div>
+    <div class="row"><div class="q">マルチリージョンで複製・低遅延</div><div class="a">DynamoDB グローバルテーブル</div></div>
+    <div class="row"><div class="q">DynamoDB読込をミリ秒→マイクロ秒</div><div class="a">DAX</div></div>
+    <div class="row"><div class="q">高速インメモリ・永続化・パーティション</div><div class="a">ElastiCache for Redis</div></div>
+    <div class="row"><div class="q">単純・最速の一時キャッシュのみ</div><div class="a">ElastiCache for Memcached</div></div>
+    <div class="row"><div class="q">RDSの読み取りスケール</div><div class="a">リードレプリカ</div></div>
+    <div class="row"><div class="q">RDSの高可用（自動フェイルオーバー）</div><div class="a">Multi-AZ</div></div>
+    <div class="row"><div class="q">グローバルでRDS低遅延/DR</div><div class="a">Aurora Global Database</div></div>
+  </div>
+
+  <h2>📦 ストレージ / S3</h2>
+  <div class="sec">
+    <div class="row"><div class="q">SQLでオブジェクトの一部だけ取得</div><div class="a">S3 Select（横断はAthena）</div></div>
+    <div class="row"><div class="q">クロスリージョンレプリケーション</div><div class="a">先にバージョニング有効化（必須）</div></div>
+    <div class="row"><div class="q">EBSのバックアップを自動化</div><div class="a">Data Lifecycle Manager (DLM)</div></div>
+    <div class="row"><div class="q">スケールイン時にEBSを保持</div><div class="a">DeleteOnTermination = false</div></div>
+    <div class="row"><div class="q">一時的な配布・期限付きアクセス</div><div class="a">署名付きURL</div></div>
+    <div class="row"><div class="q">特定IP以外を拒否</div><div class="a">バケットポリシー（IpAddress条件）</div></div>
+    <div class="row"><div class="q">最安の長期アーカイブ（取り出し遅くてOK）</div><div class="a">Glacier Deep Archive</div></div>
+    <div class="row"><div class="q">オンプレ↔S3の連携・キャッシュ</div><div class="a">Storage Gateway</div></div>
+  </div>
+  </div>
+  <p class="empty" id="empty">該当なし</p>
+  <div class="note">⏱ 本番ペース: 1問<b>約90秒</b>（模試3は時間オーバー）。迷ったら印を付けて先へ。</div>
+  <footer>元データ: 弱点克服ガイド.md / 弱点まとめ.md</footer>
+</div>
+<script>
+  function toggleTheme(){const d=document.body.classList.toggle('dark');document.getElementById('tg').textContent=d?'☀️ 明':'🌙 暗';localStorage.setItem('cheatTheme',d?'dark':'light');}
+  if(localStorage.getItem('cheatTheme')==='dark'){document.body.classList.add('dark');document.getElementById('tg').textContent='☀️ 明';}
+  function doFilter(){
+    const q=document.getElementById('filter').value.trim().toLowerCase();
+    let any=false;
+    document.querySelectorAll('#content h2').forEach(h=>{
+      const sec=h.nextElementSibling; let shown=0;
+      sec.querySelectorAll('.row').forEach(r=>{
+        const hit=!q||r.textContent.toLowerCase().includes(q);
+        r.style.display=hit?'':'none'; if(hit)shown++;
+      });
+      // ノートは検索時のみ隠す
+      sec.querySelectorAll('.note').forEach(n=>{n.style.display=(!q)?'':'none';});
+      const vis=shown>0; h.style.display=vis?'':'none'; sec.style.display=vis?'':'none'; if(vis)any=true;
+    });
+    document.getElementById('empty').style.display=any?'none':'block';
+  }
+</script>
+</body>
+</html>
