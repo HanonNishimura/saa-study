@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>SAA 用語の読み方・発音</title>
+<style>
+  :root{
+    --bg:#f4f6f9; --card:#fff; --text:#1f2937; --sub:#6b7280; --line:#e5e7eb;
+    --accent:#2563eb; --aBg:#eef2ff; --head:#111827; --headbg:#e8edf5; --btn:#f3f4f6;
+  }
+  body.dark{
+    --bg:#15171c; --card:#1e2128; --text:#e8e2d6; --sub:#9aa0aa; --line:#2c2f37;
+    --accent:#e0a85a; --aBg:#2a2418; --head:#e8e2d6; --headbg:#262a31; --btn:#262a31;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{margin:0;background:var(--bg);color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Hiragino Kaku Gothic ProN",Meiryo,sans-serif;
+    line-height:1.5;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}
+  .wrap{max-width:600px;margin:0 auto;padding:14px}
+  header{display:flex;align-items:center;justify-content:space-between;gap:8px}
+  h1{font-size:19px;margin:0;font-weight:800}
+  .toggle{border:0;background:var(--btn);color:var(--text);padding:7px 12px;border-radius:999px;font-weight:700;font-size:13px;cursor:pointer}
+  .lead{color:var(--sub);font-size:12px;margin:6px 0 10px}
+  .top{display:flex;gap:8px;align-items:center;margin-bottom:12px}
+  #filter{flex:1;border:1px solid var(--line);background:var(--card);color:var(--text);border-radius:10px;padding:11px 12px;font-size:15px}
+  a.back{color:var(--accent);text-decoration:none;font-size:13px;font-weight:700;white-space:nowrap}
+  h2{position:sticky;top:0;background:var(--headbg);color:var(--head);font-size:14px;margin:14px 0 0;padding:8px 12px;border-radius:10px 10px 0 0;z-index:1}
+  .sec{background:var(--card);border:1px solid var(--line);border-top:0;border-radius:0 0 12px 12px;padding:2px 12px 6px;margin-bottom:12px}
+  .row{display:flex;align-items:flex-start;gap:10px;padding:11px 0;border-bottom:1px solid var(--line)}
+  .row:last-child{border-bottom:0}
+  .spk{flex:0 0 auto;border:0;background:var(--aBg);color:var(--accent);width:42px;height:42px;border-radius:50%;font-size:18px;cursor:pointer;margin-top:2px}
+  .spk:active{transform:scale(.92)}
+  .info{flex:1;min-width:0}
+  .term{font-size:17px;font-weight:800}
+  .kana{font-size:13px;color:var(--accent);margin-left:8px;font-weight:700}
+  .eng{font-size:13.5px;color:var(--text);margin-top:1px}
+  .mean{font-size:12.5px;color:var(--sub);margin-top:2px}
+  .empty{display:none;text-align:center;color:var(--sub);padding:20px}
+  .note{font-size:12px;color:var(--sub);background:var(--btn);border-radius:9px;padding:9px 11px;margin:10px 0}
+  .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--text);color:var(--bg);padding:9px 16px;border-radius:99px;font-weight:700;font-size:13px;opacity:0;pointer-events:none;transition:.2s}
+  .toast.show{opacity:1}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>🔊 用語の読み方・発音</h1>
+    <button class="toggle" id="tg" onclick="toggleTheme()">🌙</button>
+  </header>
+  <p class="lead">🔊を押すと英語の発音を読み上げます。略語は「正式名称・カタカナ読み・意味」付き。</p>
+  <div class="top">
+    <input id="filter" placeholder="🔍 用語で検索（例: VPC, ストレージ, 暗号）" oninput="doFilter()">
+    <a class="back" href="hub.html">🏠 ハブ</a>
+  </div>
+  <div id="content"></div>
+  <p class="empty" id="empty">該当なし</p>
+  <div class="note">💡 略語は「ブイ・ピー・シー」のように1文字ずつ読むものが多い（VPC, IAM, EC2…）。サービス名は単語読み（Aurora=オーロラ）。発音が出ないときは端末の音量/消音を確認。</div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+const T=[
+// cat, 用語, カナ読み, 正式名称(英語), 意味
+["超基本","VPC","ブイ・ピー・シー","Virtual Private Cloud","AWS内の自分専用の仮想ネットワーク"],
+["超基本","IAM","アイアム","Identity and Access Management","誰が何をできるかの権限管理"],
+["超基本","EC2","イー・シー・ツー","Elastic Compute Cloud","仮想サーバ"],
+["超基本","S3","エス・スリー","Simple Storage Service","オブジェクトストレージ（ファイル置き場）"],
+["超基本","AZ","エー・ゼット","Availability Zone","データセンター群＝可用性の単位"],
+["超基本","AMI","アミ／エー・エム・アイ","Amazon Machine Image","EC2の起動イメージ（OS入りテンプレ）"],
+["超基本","ARN","エー・アール・エヌ","Amazon Resource Name","AWSリソースの一意な識別子"],
+["超基本","HA","エイチ・エー","High Availability","高可用性（止まりにくい構成）"],
+["超基本","DR","ディー・アール","Disaster Recovery","災害復旧"],
+["超基本","RPO / RTO","アール・ピー・オー／アール・ティー・オー","Recovery Point / Time Objective","復旧目標（どこまでのデータ／どれだけの時間）"],
+
+["ネットワーク","SG","エス・ジー","Security Group","インスタンス単位のFW（ステートフル）"],
+["ネットワーク","NACL","ナクル／エヌ・エー・シー・エル","Network Access Control List","サブネット単位のFW（ステートレス）"],
+["ネットワーク","NAT","ナット","Network Address Translation","プライベートからの外向き通信を中継"],
+["ネットワーク","ELB","イー・エル・ビー","Elastic Load Balancing","負荷分散"],
+["ネットワーク","ALB","エー・エル・ビー","Application Load Balancer","L7(HTTP)のロードバランサ"],
+["ネットワーク","NLB","エヌ・エル・ビー","Network Load Balancer","L4(TCP)のロードバランサ"],
+["ネットワーク","CloudFront","クラウドフロント","Amazon CloudFront","CDN（配信を高速化・キャッシュ）"],
+["ネットワーク","Route 53","ルート・ゴーサン","Amazon Route 53","DNS（名前解決・ルーティング）"],
+["ネットワーク","DNS","ディー・エヌ・エス","Domain Name System","ドメイン名→IPの名前解決"],
+["ネットワーク","TTL","ティー・ティー・エル","Time To Live","キャッシュの有効期間"],
+["ネットワーク","CDN","シー・ディー・エヌ","Content Delivery Network","コンテンツ配信網（=CloudFront）"],
+["ネットワーク","DX","ディー・エックス","Direct Connect","オンプレ↔AWSの専用線"],
+["ネットワーク","VGW","ブイ・ジー・ダブリュー","Virtual Private Gateway","VPN/専用線のAWS側ゲートウェイ"],
+["ネットワーク","CGW","シー・ジー・ダブリュー","Customer Gateway","VPNのオンプレ側ゲートウェイ"],
+["ネットワーク","TGW","ティー・ジー・ダブリュー","Transit Gateway","複数VPC/オンプレを束ねるハブ"],
+["ネットワーク","WAF","ワフ","Web Application Firewall","L7の防御（SQLi/XSS等）"],
+
+["コンピュート","ASG","エー・エス・ジー","Auto Scaling Group","台数を自動で増減するグループ"],
+["コンピュート","ECS","イー・シー・エス","Elastic Container Service","コンテナ管理（AWS独自）"],
+["コンピュート","EKS","イー・ケー・エス","Elastic Kubernetes Service","マネージドKubernetes"],
+["コンピュート","ECR","イー・シー・アール","Elastic Container Registry","コンテナイメージ置き場"],
+["コンピュート","Fargate","ファーゲート","AWS Fargate","サーバ管理不要でコンテナ実行"],
+["コンピュート","Lambda","ラムダ","AWS Lambda","サーバレス関数（コードだけ実行）"],
+["コンピュート","Beanstalk","ビーンストーク","Elastic Beanstalk","コードを上げるだけのPaaS"],
+["コンピュート","MGN","エム・ジー・エヌ","Application Migration Service","サーバを丸ごとAWSへ移行"],
+["コンピュート","CloudFormation","クラウドフォーメーション","AWS CloudFormation","構成をコード化(IaC)・再現"],
+
+["ストレージ","EBS","イー・ビー・エス","Elastic Block Store","EC2に付けるディスク（ブロック）"],
+["ストレージ","EFS","イー・エフ・エス","Elastic File System","複数EC2で共有するファイルストレージ"],
+["ストレージ","IOPS","アイ・オプス","Input/Output Per Second","ディスク性能（秒間I/O数）"],
+["ストレージ","Glacier","グレイシャー","S3 Glacier","安価な長期アーカイブ"],
+["ストレージ","CRR","シー・アール・アール","Cross-Region Replication","リージョン間レプリケーション"],
+["ストレージ","SRR","エス・アール・アール","Same-Region Replication","同一リージョン内レプリケーション"],
+["ストレージ","DLM","ディー・エル・エム","Data Lifecycle Manager","EBSスナップショットの自動化"],
+["ストレージ","Storage Gateway","ストレージ・ゲートウェイ","AWS Storage Gateway","オンプレ↔クラウドのストレージ連携"],
+["ストレージ","Snowball","スノーボール","AWS Snowball","物理デバイスで大容量データ移送"],
+
+["データベース","RDS","アール・ディー・エス","Relational Database Service","マネージドなリレーショナルDB"],
+["データベース","Aurora","オーロラ","Amazon Aurora","高性能なクラウドDB(MySQL/PostgreSQL互換)"],
+["データベース","DynamoDB","ダイナモ・ディー・ビー","Amazon DynamoDB","NoSQL（キーバリュー）"],
+["データベース","DAX","ダックス","DynamoDB Accelerator","DynamoDB専用インメモリキャッシュ"],
+["データベース","ElastiCache","エラスティキャッシュ","Amazon ElastiCache","インメモリキャッシュ(Redis/Memcached)"],
+["データベース","Redshift","レッドシフト","Amazon Redshift","データウェアハウス（分析用DB）"],
+["データベース","Athena","アテナ","Amazon Athena","S3のデータをSQLで分析"],
+
+["セキュリティ/認証","KMS","ケー・エム・エス","Key Management Service","暗号鍵の管理"],
+["セキュリティ/認証","STS","エス・ティー・エス","Security Token Service","一時的な認証情報を発行"],
+["セキュリティ/認証","MFA","エム・エフ・エー","Multi-Factor Authentication","多要素認証"],
+["セキュリティ/認証","SCP","エス・シー・ピー","Service Control Policy","Organizationsの上限権限"],
+["セキュリティ/認証","ACL","エー・シー・エル","Access Control List","アクセス制御リスト"],
+["セキュリティ/認証","Cognito","コグニート","Amazon Cognito","アプリ利用者のサインアップ/ログイン"],
+["セキュリティ/認証","Shield","シールド","AWS Shield","DDoS防御"],
+["セキュリティ/認証","GuardDuty","ガードデューティ","Amazon GuardDuty","脅威の検知"],
+["セキュリティ/認証","Macie","メイシー","Amazon Macie","S3の機密データを検出"],
+["セキュリティ/認証","Inspector","インスペクター","Amazon Inspector","脆弱性スキャン"],
+
+["メッセージ/連携","SNS","エス・エヌ・エス","Simple Notification Service","Pub/Subの通知（トピック）"],
+["メッセージ/連携","SQS","エス・キュー・エス","Simple Queue Service","メッセージキュー（疎結合）"],
+["メッセージ/連携","SES","エス・イー・エス","Simple Email Service","メール送信"],
+["メッセージ/連携","Kinesis","キネシス","Amazon Kinesis","ストリーミングデータ収集"],
+["メッセージ/連携","Firehose","ファイアホース","Amazon Data Firehose","ストリーム→S3等へ配信"],
+["メッセージ/連携","EventBridge","イベントブリッジ","Amazon EventBridge","イベント駆動の連携"],
+
+["移行/DB移行","DMS","ディー・エム・エス","Database Migration Service","DBの移行"],
+["移行/DB移行","SCT","エス・シー・ティー","Schema Conversion Tool","DBスキーマの変換"],
+
+["監視・運用・管理","CloudWatch","クラウドウォッチ","Amazon CloudWatch","監視・メトリクス・ログ・アラーム"],
+["監視・運用・管理","CloudTrail","クラウドトレイル","AWS CloudTrail","API操作の証跡（誰が何をしたか）"],
+["監視・運用・管理","SSM","エス・エス・エム","Systems Manager","サーバ運用管理（パッチ・実行）"],
+["監視・運用・管理","Organizations","オーガニゼーションズ","AWS Organizations","複数アカウントの一元管理"],
+["監視・運用・管理","Trusted Advisor","トラステッド・アドバイザー","AWS Trusted Advisor","コスト/セキュリティ等の改善提案"],
+];
+
+const LS="termsTheme";
+function toggleTheme(){const d=document.body.classList.toggle('dark');document.getElementById('tg').textContent=d?'☀️':'🌙';localStorage.setItem(LS,d?'dark':'light');}
+if(localStorage.getItem(LS)==='dark'){document.body.classList.add('dark');document.getElementById('tg').textContent='☀️';}
+function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),1500);}
+function speak(txt){
+  if(!('speechSynthesis' in window)){toast('この端末は読み上げ非対応');return;}
+  try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(txt);u.lang='en-US';u.rate=0.9;speechSynthesis.speak(u);}
+  catch(e){toast('読み上げできませんでした');}
+}
+function render(){
+  const cats=[...new Set(T.map(x=>x[0]))];
+  let html='';
+  cats.forEach(c=>{
+    html+=`<h2>${c}</h2><div class="sec">`;
+    T.filter(x=>x[0]===c).forEach(([cat,term,kana,eng,mean])=>{
+      const blob=`${term} ${kana} ${eng} ${mean}`.toLowerCase();
+      html+=`<div class="row" data-s="${blob.replace(/"/g,'')}">
+        <button class="spk" title="発音" onclick="speak(${JSON.stringify(eng).replace(/"/g,'&quot;')})">🔊</button>
+        <div class="info">
+          <div><span class="term">${term}</span><span class="kana">${kana}</span></div>
+          <div class="eng">${eng}</div>
+          <div class="mean">${mean}</div>
+        </div></div>`;
+    });
+    html+=`</div>`;
+  });
+  document.getElementById('content').innerHTML=html;
+}
+function doFilter(){
+  const q=document.getElementById('filter').value.trim().toLowerCase();
+  let any=false;
+  document.querySelectorAll('#content h2').forEach(h=>{
+    const sec=h.nextElementSibling;let shown=0;
+    sec.querySelectorAll('.row').forEach(r=>{const hit=!q||r.dataset.s.includes(q);r.style.display=hit?'':'none';if(hit)shown++;});
+    const vis=shown>0;h.style.display=vis?'':'none';sec.style.display=vis?'':'none';if(vis)any=true;
+  });
+  document.getElementById('empty').style.display=any?'none':'block';
+}
+render();
+</script>
+</body>
+</html>
